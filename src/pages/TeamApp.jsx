@@ -73,15 +73,16 @@ function Logo({ size = 32, light = false }) {
   );
 }
 
-function DonutChart({ slices, size = 180, label = "", light = false }) {
+function DonutChart({ slices, size = 220, label = "", light = false }) {
   const [hovered, setHovered] = useState(null);
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
-  const r = 60, cx = size / 2, cy = size / 2, stroke = 22;
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const containerRef = useRef(null);
+  const r = size * 0.31, cx = size / 2, cy = size / 2, stroke = size * 0.11;
   const total = slices.reduce((s, x) => s + x.value, 0);
   if (!total) return (
     <div style={{ width: size, height: size, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ width: size - 40, height: size - 40, borderRadius: "50%", border: `${stroke}px solid ${P.gray100}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontSize: 11, color: P.gray400, fontWeight: 700 }}>No data</span>
+      <div style={{ width: size - 40, height: size - 40, borderRadius: "50%", border: `${stroke}px solid ${light ? "rgba(255,255,255,0.1)" : P.gray100}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ fontSize: 12, color: light ? "rgba(255,255,255,0.4)" : P.gray400, fontWeight: 700 }}>No data</span>
       </div>
     </div>
   );
@@ -89,46 +90,47 @@ function DonutChart({ slices, size = 180, label = "", light = false }) {
   let offset = 0;
   const arcs = slices.map(s => { const dash = s.value / total * circ; const arc = { ...s, dash, gap: circ - dash, offset }; offset += dash; return arc; });
 
-  function handleMouseMove(e, arc) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-    setHovered(arc);
+  function handleMouseMove(e) {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
   }
 
-  const centerLabel = hovered
-    ? `${Math.round(hovered.value / total * 100)}%`
-    : label;
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
-      <div style={{ position: "relative", width: size, height: size }}>
-        <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}
-          onMouseLeave={() => setHovered(null)}>
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={light ? "rgba(255,255,255,0.1)" : P.gray100} strokeWidth={stroke} />
-          {arcs.map((a, i) => (
-            <circle key={i} cx={cx} cy={cy} r={r} fill="none"
-              stroke={a.color}
-              strokeWidth={hovered === a ? stroke + 4 : stroke}
-              strokeDasharray={`${a.dash} ${a.gap}`}
-              strokeDashoffset={-a.offset}
-              strokeLinecap="butt"
-              style={{ cursor: "pointer", transition: "stroke-width 0.15s" }}
-              onMouseMove={e => handleMouseMove(e, a)}
-              onMouseEnter={() => setHovered(a)}
-              onMouseLeave={() => setHovered(null)}
-            />
-          ))}
-        </svg>
-        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
-          <span style={{ fontSize: hovered ? 18 : 13, fontWeight: 800, color: light ? P.white : P.gray700, textAlign: "center", padding: "0 20px", lineHeight: 1.4, whiteSpace: "pre-line", transition: "font-size 0.15s" }}>
-            {centerLabel}
-          </span>
-          {hovered && <span style={{ fontSize: 10, color: light ? "rgba(255,255,255,0.7)" : P.gray400, fontWeight: 700, textAlign: "center", maxWidth: size - 40, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{hovered.label}</span>}
-        </div>
+    <div ref={containerRef} style={{ position: "relative", display: "inline-block" }} onMouseMove={handleMouseMove} onMouseLeave={() => setHovered(null)}>
+      <svg width={size} height={size} style={{ transform: "rotate(-90deg)", display: "block" }}>
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke={light ? "rgba(255,255,255,0.1)" : P.gray100} strokeWidth={stroke} />
+        {arcs.map((a, i) => (
+          <circle key={i} cx={cx} cy={cy} r={r} fill="none"
+            stroke={a.color}
+            strokeWidth={hovered === a ? stroke * 1.18 : stroke}
+            strokeDasharray={`${a.dash} ${a.gap}`}
+            strokeDashoffset={-a.offset}
+            strokeLinecap="butt"
+            style={{ cursor: "pointer", transition: "stroke-width 0.12s" }}
+            onMouseEnter={() => setHovered(a)}
+          />
+        ))}
+      </svg>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+        {hovered ? (
+          <>
+            <span style={{ fontSize: size * 0.12, fontWeight: 900, color: light ? P.white : P.gray700, lineHeight: 1 }}>{Math.round(hovered.value / total * 100)}%</span>
+            <span style={{ fontSize: size * 0.065, color: light ? "rgba(255,255,255,0.65)" : P.gray400, fontWeight: 700, textAlign: "center", maxWidth: size * 0.45, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 3 }}>{hovered.label}</span>
+          </>
+        ) : (
+          <span style={{ fontSize: size * 0.075, fontWeight: 800, color: light ? P.white : P.gray700, textAlign: "center", padding: `0 ${size * 0.12}px`, lineHeight: 1.4, whiteSpace: "pre-line" }}>{label}</span>
+        )}
       </div>
+      {hovered && (
+        <div style={{ position: "absolute", left: mousePos.x + 14, top: mousePos.y - 40, background: light ? "rgba(255,255,255,0.95)" : P.gray700, color: light ? P.gray700 : P.white, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, pointerEvents: "none", whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,0.2)", zIndex: 99 }}>
+          <span style={{ color: hovered.color, marginRight: 6 }}>●</span>{hovered.label} — {Math.round(hovered.value / total * 100)}%
+        </div>
+      )}
     </div>
   );
 }
+
 
 // ── Meeting Timer ─────────────────────────────────────────────────────────────
 function MeetingTimer({ duration }) {
@@ -292,7 +294,7 @@ function PresentMode({ members, initialMemberIndex, weekDataMap, onExit }) {
             <p style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.5)", letterSpacing: 2, marginBottom: 12, textAlign: "center" }}>TIME BREAKDOWN</p>
             <h2 style={{ fontSize: 36, fontWeight: 900, color: "white", margin: "0 0 32px", textAlign: "center", letterSpacing: -1 }}>How I spent my time</h2>
             <div style={{ display: "flex", alignItems: "center", gap: 40, flexWrap: "wrap", justifyContent: "center" }}>
-              <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: "rgba(255,255,255,0.1)" }] : [])]} size={220} label={`${totalPct.toFixed(0)}%\nallocated`} light />
+              <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: "rgba(255,255,255,0.1)" }] : [])]} size={300} label={`${totalPct.toFixed(0)}%\nallocated`} light />
               <div style={{ display: "flex", flexDirection: "column", gap: 12, minWidth: 180 }}>
                 {timeSlices.map((t, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -348,15 +350,25 @@ function HistoryView({ member, onBack }) {
   const [weeks, setWeeks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedWeek, setSelectedWeek] = useState(null);
+  const [filterFrom, setFilterFrom] = useState("");
+  const [filterTo, setFilterTo] = useState("");
 
   useEffect(() => { loadHistory(); }, [member.id]);
 
   async function loadHistory() {
     setLoading(true);
-    const { data } = await supabase.from("member_week_data").select("*").eq("member_id", member.id).order("week_key", { ascending: false }).limit(12);
+    const { data } = await supabase.from("member_week_data").select("*").eq("member_id", member.id).order("week_key", { ascending: false }).limit(104);
     setWeeks(data || []);
     setLoading(false);
   }
+
+  const filteredWeeks = weeks.filter(w => {
+    if (filterFrom && w.week_key < filterFrom) return false;
+    if (filterTo && w.week_key > filterTo) return false;
+    return true;
+  });
+
+  const years = [...new Set(weeks.map(w => w.week_key.split("-")[0]))].sort((a,b) => b - a);
 
   if (selectedWeek) {
     const timeSlices = (selectedWeek.time || []).map((t, i) => ({ label: t.label, value: parseFloat(t.value) || 0, color: SWATCHES[i % SWATCHES.length], pct: t.value })).filter(s => s.value > 0);
@@ -392,7 +404,7 @@ function HistoryView({ member, onBack }) {
             <div style={{ ...card, padding: 20, marginBottom: 16 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}><PieChart size={14} color={P.red} /><span style={{ fontWeight: 800, fontSize: 14, color: P.gray700 }}>Time Breakdown</span></div>
               <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-                <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: P.gray100 }] : [])]} size={140} label={`${totalPct.toFixed(0)}%`} />
+                <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: P.gray100 }] : [])]} size={180} label={`${totalPct.toFixed(0)}%`} />
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
                   {timeSlices.map((t, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -425,10 +437,21 @@ function HistoryView({ member, onBack }) {
           <Avatar name={member.user_name} size={44} />
           <div>
             <p style={{ fontWeight: 900, fontSize: 20, color: P.gray700, margin: 0 }}>{member.user_name}</p>
-            <p style={{ fontSize: 12, color: P.gray400, margin: 0 }}>Past 12 weeks</p>
+            <p style={{ fontSize: 12, color: P.gray400, margin: 0 }}>Up to 2 years of history</p>
           </div>
         </div>
-        {loading ? (
+        {weeks.length > 4 && !loading && (
+          <div style={{ ...card, padding: 16, marginBottom: 16 }}>
+            <p style={{ fontSize: 11, fontWeight: 800, color: P.gray400, letterSpacing: 1, marginBottom: 10 }}>FILTER BY YEAR</p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button onClick={() => { setFilterFrom(""); setFilterTo(""); }} style={{ padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${!filterFrom && !filterTo ? P.red : P.gray200}`, background: !filterFrom && !filterTo ? P.redLight : P.white, color: !filterFrom && !filterTo ? P.red : P.gray400, fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>All</button>
+              {years.map(y => (
+                <button key={y} onClick={() => { setFilterFrom(`${y}-W01`); setFilterTo(`${y}-W53`); }} style={{ padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${filterFrom === \`${y}-W01\` ? P.red : P.gray200}`, background: filterFrom === \`${y}-W01\` ? P.redLight : P.white, color: filterFrom === \`${y}-W01\` ? P.red : P.gray400, fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{y}</button>
+              ))}
+            </div>
+          </div>
+        )}
+                {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: 48 }}>
             <div style={{ width: 32, height: 32, borderRadius: "50%", border: `3px solid ${P.redMid}`, borderTopColor: P.red, animation: "spin 0.8s linear infinite" }} />
             <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
@@ -437,9 +460,13 @@ function HistoryView({ member, onBack }) {
           <div style={{ ...card, padding: 32, textAlign: "center" }}>
             <p style={{ fontSize: 14, color: P.gray400 }}>No history yet — data will appear here after each week.</p>
           </div>
+        ) : filteredWeeks.length === 0 ? (
+          <div style={{ ...card, padding: 32, textAlign: "center" }}>
+            <p style={{ fontSize: 14, color: P.gray400 }}>No entries for that period.</p>
+          </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {weeks.map((w, i) => {
+            {filteredWeeks.map((w, i) => {
               const isCurrentWeek = w.week_key === getWeekKey();
               const metricCount = w.metrics?.length || 0;
               const timeCount = w.time?.length || 0;
@@ -588,7 +615,7 @@ function PersonView({ member, isOwnProfile, onBack, members, weekDataMap, onPres
               </div>
               {timeSlices.length > 0 && (
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-                  <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: P.gray100 }] : [])]} size={160} label={`${totalPct.toFixed(0)}%\nallocated`} />
+                  <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: P.gray100 }] : [])]} size={200} label={`${totalPct.toFixed(0)}%\nallocated`} />
                 </div>
               )}
               {!weekData.time.length && <p style={{ fontSize: 13, color: P.gray400, marginBottom: 12 }}>{isOwnProfile ? "No time breakdown yet." : "No time data entered."}</p>}
