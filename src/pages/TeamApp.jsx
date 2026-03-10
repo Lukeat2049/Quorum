@@ -301,7 +301,7 @@ function PresentMode({ members, initialMemberIndex, weekDataMap, onExit, duratio
             <p style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.5)", letterSpacing: 2, marginBottom: 12, textAlign: "center" }}>TIME BREAKDOWN</p>
             <h2 style={{ fontSize: 36, fontWeight: 900, color: "white", margin: "0 0 32px", textAlign: "center", letterSpacing: -1 }}>How I spent my time</h2>
             <div style={{ display: "flex", alignItems: "center", gap: 40, flexWrap: "wrap", justifyContent: "center" }}>
-              <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: "rgba(255,255,255,0.1)" }] : [])]} size={300} label={`${totalPct.toFixed(0)}%\nallocated`} light />
+              <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: "rgba(255,255,255,0.1)" }] : [])]} size={300} label="" light />
               <div style={{ display: "flex", flexDirection: "column", gap: 12, minWidth: 180 }}>
                 {timeSlices.map((t, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -622,7 +622,7 @@ function PersonView({ member, isOwnProfile, onBack, members, weekDataMap, onPres
               </div>
               {timeSlices.length > 0 && (
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-                  <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: P.gray100 }] : [])]} size={200} label={`${totalPct.toFixed(0)}%\nallocated`} />
+                  <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: P.gray100 }] : [])]} size={200} label="" />
                 </div>
               )}
               {!weekData.time.length && <p style={{ fontSize: 13, color: P.gray400, marginBottom: 12 }}>{isOwnProfile ? "No time breakdown yet." : "No time data entered."}</p>}
