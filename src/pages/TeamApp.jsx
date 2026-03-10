@@ -381,8 +381,8 @@ function HistoryView({ member, onBack }) {
     const timeSlices = (selectedWeek.time || []).map((t, i) => ({ label: t.label, value: parseFloat(t.value) || 0, color: SWATCHES[i % SWATCHES.length], pct: t.value })).filter(s => s.value > 0);
     const totalPct = (selectedWeek.time || []).reduce((s, t) => s + (parseFloat(t.value) || 0), 0);
     return (
-      <div style={{ minHeight: "100vh", background: P.gray50, padding: 24, fontFamily: "'DM Sans', sans-serif" }}>
-        <div style={{ maxWidth: 440, margin: "0 auto" }}>
+      <div style={{ minHeight: "100vh", background: P.gray50, padding: "40px 32px", fontFamily: "'DM Sans', sans-serif" }}>
+        <div style={{ maxWidth: 680, margin: "0 auto" }}>
           <button onClick={() => setSelectedWeek(null)} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: P.gray400, fontSize: 13, cursor: "pointer", fontWeight: 700, marginBottom: 24, fontFamily: "inherit" }}><ArrowLeft size={16} />Back to History</button>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
             <Avatar name={member.user_name} size={44} />
@@ -437,8 +437,8 @@ function HistoryView({ member, onBack }) {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: P.gray50, padding: 24, fontFamily: "'DM Sans', sans-serif" }}>
-      <div style={{ maxWidth: 440, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: P.gray50, padding: "40px 32px", fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ maxWidth: 680, margin: "0 auto" }}>
         <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: P.gray400, fontSize: 13, cursor: "pointer", fontWeight: 700, marginBottom: 24, fontFamily: "inherit" }}><ArrowLeft size={16} />Back</button>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
           <Avatar name={member.user_name} size={44} />
@@ -557,8 +557,8 @@ function PersonView({ member, isOwnProfile, onBack, members, weekDataMap, onPres
   const memberIndex = members ? members.findIndex(m => m.id === member.id) : 0;
 
   return (
-    <div style={{ minHeight: "100vh", background: P.gray50, padding: 24, fontFamily: "'DM Sans', sans-serif" }}>
-      <div style={{ maxWidth: 440, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: P.gray50, padding: "40px 32px", fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ maxWidth: 680, margin: "0 auto" }}>
         <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: P.gray400, fontSize: 13, cursor: "pointer", fontWeight: 700, marginBottom: 24, fontFamily: "inherit" }}><ArrowLeft size={16} />Back</button>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -675,8 +675,8 @@ function TeamHistoryView({ members, onBack, onSelectMember }) {
   }));
 
   return (
-    <div style={{ minHeight: "100vh", background: P.gray50, padding: 24, fontFamily: "'DM Sans', sans-serif" }}>
-      <div style={{ maxWidth: 440, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: P.gray50, padding: "40px 32px", fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ maxWidth: 680, margin: "0 auto" }}>
         <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: P.gray400, fontSize: 13, cursor: "pointer", fontWeight: 700, marginBottom: 24, fontFamily: "inherit" }}><ArrowLeft size={16} />Back</button>
         <p style={{ fontWeight: 900, fontSize: 22, color: P.gray700, marginBottom: 8 }}>Team History</p>
         <p style={{ fontSize: 13, color: P.gray400, marginBottom: 24 }}>Tap a team member to see their history across all weeks.</p>
@@ -739,8 +739,8 @@ function SummaryPanel({ members, onClose }) {
   useEffect(() => { generate(); }, []);
 
   return (
-    <div style={{ minHeight: "100vh", background: P.gray50, padding: 24, fontFamily: "'DM Sans', sans-serif" }}>
-      <div style={{ maxWidth: 520, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: P.gray50, padding: "40px 32px", fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ maxWidth: 680, margin: "0 auto" }}>
         <button onClick={onClose} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: P.gray400, fontSize: 13, cursor: "pointer", fontWeight: 700, marginBottom: 24, fontFamily: "inherit" }}><ArrowLeft size={16} />Back</button>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
           <div style={{ width: 48, height: 48, borderRadius: "50%", background: P.red, display: "flex", alignItems: "center", justifyContent: "center" }}><FileText size={22} color="white" /></div>
@@ -881,8 +881,8 @@ export default function TeamApp() {
   if (showSummary) return <SummaryPanel members={members} onClose={() => setShowSummary(false)} />;
 
   if (showTeamNotes) return (
-    <div style={{ minHeight: "100vh", background: P.gray50, padding: 24, fontFamily: "'DM Sans', sans-serif" }}>
-      <div style={{ maxWidth: 440, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: P.gray50, padding: "40px 32px", fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ maxWidth: 680, margin: "0 auto" }}>
         <button onClick={() => setShowTeamNotes(false)} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: P.gray400, fontSize: 13, cursor: "pointer", fontWeight: 700, marginBottom: 24, fontFamily: "inherit" }}><ArrowLeft size={16} />Back</button>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
           <div style={{ width: 48, height: 48, borderRadius: "50%", background: P.redLight, display: "flex", alignItems: "center", justifyContent: "center" }}><MessageSquare size={20} color={P.red} /></div>
