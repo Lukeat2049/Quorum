@@ -113,13 +113,11 @@ function DonutChart({ slices, size = 220, label = "", light = false }) {
         ))}
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
-        {hovered ? (
+        {hovered && (
           <>
             <span style={{ fontSize: size * 0.12, fontWeight: 900, color: light ? P.white : P.gray700, lineHeight: 1 }}>{Math.round(hovered.value / total * 100)}%</span>
             <span style={{ fontSize: size * 0.065, color: light ? "rgba(255,255,255,0.65)" : P.gray400, fontWeight: 700, textAlign: "center", maxWidth: size * 0.45, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 3 }}>{hovered.label}</span>
           </>
-        ) : (
-          <span style={{ fontSize: size * 0.075, fontWeight: 800, color: light ? P.white : P.gray700, textAlign: "center", padding: `0 ${size * 0.12}px`, lineHeight: 1.4, whiteSpace: "pre-line" }}>{label}</span>
         )}
       </div>
       {hovered && (
@@ -133,16 +131,13 @@ function DonutChart({ slices, size = 220, label = "", light = false }) {
 
 
 // ── Meeting Timer ─────────────────────────────────────────────────────────────
-function MeetingTimer({ duration }) {
-  const [running, setRunning] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
+function MeetingTimer({ duration, elapsed, setElapsed, running, setRunning }) {
   const iv = useRef(null);
   const total = duration * 60, remaining = Math.max(0, total - elapsed);
   const pct = total > 0 ? Math.min((elapsed / total) * 100, 100) : 0;
   const isWarn = pct >= 75 && pct < 90, isDanger = pct >= 90, isOver = elapsed >= total && total > 0;
   const ringColor = isDanger ? "#e60023" : isWarn ? "#ff8c00" : "#00a86b";
   useEffect(() => { if (running) { iv.current = setInterval(() => setElapsed(e => e + 1), 1000); } else clearInterval(iv.current); return () => clearInterval(iv.current); }, [running]);
-  useEffect(() => { setRunning(false); setElapsed(0); }, [duration]);
   const r = 50, circ = 2 * Math.PI * r;
   return (
     <div style={{ ...card, padding: 24, marginBottom: 16, background: isDanger ? "#fff5f5" : isWarn ? "#fff8f0" : P.white }}>
@@ -180,7 +175,7 @@ function MeetingTimer({ duration }) {
 }
 
 // ── Present Mode (with Next Person) ──────────────────────────────────────────
-function PresentMode({ members, initialMemberIndex, weekDataMap, onExit }) {
+function PresentMode({ members, initialMemberIndex, weekDataMap, onExit, duration, timerElapsed, timerRunning, setTimerRunning }) {
   const [memberIdx, setMemberIdx] = useState(initialMemberIndex || 0);
   const [slide, setSlide] = useState(0);
 
@@ -246,9 +241,21 @@ function PresentMode({ members, initialMemberIndex, weekDataMap, onExit }) {
             }}>{m.user_name}</button>
           ))}
         </div>
-        <button onClick={onExit} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 20, padding: "8px 16px", color: "white", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
-          <Minimize2 size={13} />Exit
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {/* Compact timer in present mode */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.12)", borderRadius: 20, padding: "8px 16px" }}>
+            <Clock size={13} color="rgba(255,255,255,0.7)" />
+            <span style={{ fontSize: 14, fontWeight: 900, color: timerRunning || timerElapsed > 0 ? "white" : "rgba(255,255,255,0.5)", fontFamily: "inherit" }}>
+              {duration > 0 ? fmtTime(Math.max(0, duration * 60 - timerElapsed)) : fmtTime(timerElapsed)}
+            </span>
+            <button onClick={() => setTimerRunning(r => !r)} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 20, padding: "4px 10px", color: "white", fontWeight: 700, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
+              {timerRunning ? "Pause" : "Start"}
+            </button>
+          </div>
+          <button onClick={onExit} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 20, padding: "8px 16px", color: "white", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
+            <Minimize2 size={13} />Exit
+          </button>
+        </div>
       </div>
 
       {/* Slide dots */}
@@ -792,6 +799,8 @@ export default function TeamApp() {
   const [presenting, setPresenting] = useState(false);
   const [presentStartIdx, setPresentStartIdx] = useState(0);
   const [weekDataMap, setWeekDataMap] = useState({});
+  const [timerElapsed, setTimerElapsed] = useState(0);
+  const [timerRunning, setTimerRunning] = useState(false);
 
   useEffect(() => { if (user) loadTeam(); }, [teamId, user]);
 
@@ -858,7 +867,7 @@ export default function TeamApp() {
     </div>
   );
 
-  if (presenting) return <PresentMode members={members} initialMemberIndex={presentStartIdx} weekDataMap={weekDataMap} onExit={() => setPresenting(false)} />;
+  if (presenting) return <PresentMode members={members} initialMemberIndex={presentStartIdx} weekDataMap={weekDataMap} onExit={() => setPresenting(false)} duration={duration} timerElapsed={timerElapsed} timerRunning={timerRunning} setTimerRunning={setTimerRunning} />;
 
   if (historyMember) return <HistoryView member={historyMember} onBack={() => setHistoryMember(null)} />;
 
@@ -960,7 +969,7 @@ export default function TeamApp() {
         )}
 
         {/* Meeting Timer */}
-        <MeetingTimer duration={duration} />
+        <MeetingTimer duration={duration} elapsed={timerElapsed} setElapsed={setTimerElapsed} running={timerRunning} setRunning={setTimerRunning} />
 
         {/* Team members */}
         <div style={{ ...card, marginBottom: 12 }}>
