@@ -446,7 +446,7 @@ function HistoryView({ member, onBack }) {
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <button onClick={() => { setFilterFrom(""); setFilterTo(""); }} style={{ padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${!filterFrom && !filterTo ? P.red : P.gray200}`, background: !filterFrom && !filterTo ? P.redLight : P.white, color: !filterFrom && !filterTo ? P.red : P.gray400, fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>All</button>
               {years.map(y => (
-                <button key={y} onClick={() => { setFilterFrom(`${y}-W01`); setFilterTo(`${y}-W53`); }} style={{ padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${filterFrom === \`${y}-W01\` ? P.red : P.gray200}`, background: filterFrom === \`${y}-W01\` ? P.redLight : P.white, color: filterFrom === \`${y}-W01\` ? P.red : P.gray400, fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{y}</button>
+                <button key={y} onClick={() => { setFilterFrom(y + "-W01"); setFilterTo(y + "-W53"); }} style={{ padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${filterFrom === y + "-W01" ? P.red : P.gray200}`, background: filterFrom === y + "-W01" ? P.redLight : P.white, color: filterFrom === y + "-W01" ? P.red : P.gray400, fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{y}</button>
               ))}
             </div>
           </div>
