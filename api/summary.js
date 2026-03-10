@@ -30,3 +30,4 @@ export default async function handler(req, res) {
   
   res.status(500).json({ error: "Failed to generate summary — check GEMINI_API_KEY in Vercel env vars" });
 }
+// Tue Mar 10 11:32:03 CDT 2026
