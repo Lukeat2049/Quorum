@@ -6,7 +6,7 @@ import {
   Shuffle, Users, ChevronDown, ChevronUp, Plus, X, ArrowLeft,
   BarChart2, Clock, FileText, MessageSquare, Play, Pause, RefreshCw,
   StickyNote, PieChart, Maximize2, Minimize2, ChevronLeft, ChevronRight,
-  Copy, Check, Settings, LogOut, Crown
+  Copy, Check, Settings, LogOut, Crown, History
 } from "lucide-react";
 
 const P = {
@@ -17,19 +17,29 @@ const P = {
 const SWATCHES = ["#e60023","#0076d3","#00a86b","#7e5bef","#ff6b35","#f5a623","#00bcd4","#e91e8c","#4caf50","#ff9800"];
 const card = { background: P.white, borderRadius: 16, boxShadow: "0 1px 8px rgba(0,0,0,0.08)" };
 
-function getWeekKey() {
+function getWeekKey(offset = 0) {
   const now = new Date();
+  now.setDate(now.getDate() + offset * 7);
   const jan1 = new Date(now.getFullYear(), 0, 1);
   const week = Math.ceil(((now - jan1) / 86400000 + jan1.getDay() + 1) / 7);
   return `${now.getFullYear()}-W${week}`;
 }
-function getWeekLabel() {
-  const now = new Date();
-  const day = now.getDay();
-  const mon = new Date(now); mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
-  const fri = new Date(mon); fri.setDate(mon.getDate() + 4);
+function getWeekLabel(weekKey) {
+  if (!weekKey) {
+    const now = new Date();
+    const day = now.getDay();
+    const mon = new Date(now); mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+    const fri = new Date(mon); fri.setDate(mon.getDate() + 4);
+    const fmt = (d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return `Week of ${fmt(mon)} – ${fmt(fri)}, ${now.getFullYear()}`;
+  }
+  const [year, w] = weekKey.split("-W");
+  const jan1 = new Date(parseInt(year), 0, 1);
+  const monday = new Date(jan1);
+  monday.setDate(jan1.getDate() + (parseInt(w) - 1) * 7 - jan1.getDay() + 1);
+  const friday = new Date(monday); friday.setDate(monday.getDate() + 4);
   const fmt = (d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  return `Week of ${fmt(mon)} – ${fmt(fri)}, ${now.getFullYear()}`;
+  return `Week of ${fmt(monday)} – ${fmt(friday)}, ${year}`;
 }
 function fmtTime(s) { const m = Math.floor(s / 60), sec = s % 60; return `${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`; }
 
@@ -64,6 +74,8 @@ function Logo({ size = 32, light = false }) {
 }
 
 function DonutChart({ slices, size = 180, label = "", light = false }) {
+  const [hovered, setHovered] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const r = 60, cx = size / 2, cy = size / 2, stroke = 22;
   const total = slices.reduce((s, x) => s + x.value, 0);
   if (!total) return (
@@ -76,18 +88,42 @@ function DonutChart({ slices, size = 180, label = "", light = false }) {
   const circ = 2 * Math.PI * r;
   let offset = 0;
   const arcs = slices.map(s => { const dash = s.value / total * circ; const arc = { ...s, dash, gap: circ - dash, offset }; offset += dash; return arc; });
+
+  function handleMouseMove(e, arc) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    setHovered(arc);
+  }
+
+  const centerLabel = hovered
+    ? `${Math.round(hovered.value / total * 100)}%`
+    : label;
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
       <div style={{ position: "relative", width: size, height: size }}>
-        <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+        <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}
+          onMouseLeave={() => setHovered(null)}>
           <circle cx={cx} cy={cy} r={r} fill="none" stroke={light ? "rgba(255,255,255,0.1)" : P.gray100} strokeWidth={stroke} />
           {arcs.map((a, i) => (
-            <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={a.color} strokeWidth={stroke}
-              strokeDasharray={`${a.dash} ${a.gap}`} strokeDashoffset={-a.offset} strokeLinecap="butt" />
+            <circle key={i} cx={cx} cy={cy} r={r} fill="none"
+              stroke={a.color}
+              strokeWidth={hovered === a ? stroke + 4 : stroke}
+              strokeDasharray={`${a.dash} ${a.gap}`}
+              strokeDashoffset={-a.offset}
+              strokeLinecap="butt"
+              style={{ cursor: "pointer", transition: "stroke-width 0.15s" }}
+              onMouseMove={e => handleMouseMove(e, a)}
+              onMouseEnter={() => setHovered(a)}
+              onMouseLeave={() => setHovered(null)}
+            />
           ))}
         </svg>
-        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-          <span style={{ fontSize: 13, fontWeight: 800, color: light ? P.white : P.gray700, textAlign: "center", padding: "0 20px", lineHeight: 1.4, whiteSpace: "pre-line" }}>{label}</span>
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+          <span style={{ fontSize: hovered ? 18 : 13, fontWeight: 800, color: light ? P.white : P.gray700, textAlign: "center", padding: "0 20px", lineHeight: 1.4, whiteSpace: "pre-line", transition: "font-size 0.15s" }}>
+            {centerLabel}
+          </span>
+          {hovered && <span style={{ fontSize: 10, color: light ? "rgba(255,255,255,0.7)" : P.gray400, fontWeight: 700, textAlign: "center", maxWidth: size - 40, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{hovered.label}</span>}
         </div>
       </div>
     </div>
@@ -141,46 +177,86 @@ function MeetingTimer({ duration }) {
   );
 }
 
-// ── Present Mode ──────────────────────────────────────────────────────────────
-function PresentMode({ member, weekData, onExit }) {
+// ── Present Mode (with Next Person) ──────────────────────────────────────────
+function PresentMode({ members, initialMemberIndex, weekDataMap, onExit }) {
+  const [memberIdx, setMemberIdx] = useState(initialMemberIndex || 0);
   const [slide, setSlide] = useState(0);
-  const metrics = weekData?.metrics || [];
-  const time = weekData?.time || [];
-  const notes = weekData?.notes || "";
+
+  const member = members[memberIdx];
+  const weekData = weekDataMap[member?.id] || { metrics: [], time: [], notes: "" };
+
+  const metrics = weekData.metrics || [];
+  const time = weekData.time || [];
+  const notes = weekData.notes || "";
   const totalPct = time.reduce((s, t) => s + (parseFloat(t.value) || 0), 0);
   const timeSlices = time.map((t, i) => ({ label: t.label, value: parseFloat(t.value) || 0, color: SWATCHES[i % SWATCHES.length], pct: t.value })).filter(s => s.value > 0);
-  const hue = member.user_name.charCodeAt(0) * 13 % 360;
+  const hue = (member?.user_name || "?").charCodeAt(0) * 13 % 360;
   const slides = [
     { key: "intro", label: "Overview" },
     ...(metrics.length > 0 ? [{ key: "metrics", label: "Metrics" }] : []),
     ...(time.length > 0 ? [{ key: "time", label: "Time %" }] : []),
     ...(notes.trim() ? [{ key: "notes", label: "Notes" }] : []),
   ];
-  const current = slides[slide];
+  const current = slides[slide] || slides[0];
+
+  // Reset slide when member changes
+  useEffect(() => { setSlide(0); }, [memberIdx]);
+
   useEffect(() => {
     function handleKey(e) {
-      if (e.key === "ArrowRight" || e.key === "ArrowDown") setSlide(s => Math.min(s + 1, slides.length - 1));
-      if (e.key === "ArrowLeft" || e.key === "ArrowUp") setSlide(s => Math.max(s - 1, 0));
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        if (slide < slides.length - 1) setSlide(s => s + 1);
+        else if (memberIdx < members.length - 1) { setMemberIdx(i => i + 1); }
+      }
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        if (slide > 0) setSlide(s => s - 1);
+        else if (memberIdx > 0) { setMemberIdx(i => i - 1); }
+      }
       if (e.key === "Escape") onExit();
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [slides.length]);
+  }, [slides.length, slide, memberIdx, members.length]);
+
   const bg = `linear-gradient(135deg, hsl(${hue},55%,22%) 0%, hsl(${hue},45%,35%) 100%)`;
   const weekLabel = getWeekLabel();
+
+  function goNextPerson() {
+    if (memberIdx < members.length - 1) { setMemberIdx(i => i + 1); }
+  }
+  function goPrevPerson() {
+    if (memberIdx > 0) { setMemberIdx(i => i - 1); }
+  }
+
   return (
     <div style={{ position: "fixed", inset: 0, background: bg, zIndex: 100, display: "flex", flexDirection: "column", fontFamily: "'DM Sans', sans-serif" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 32px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-        <Logo size={32} light />
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {slides.map((s, i) => (
-            <button key={s.key} onClick={() => setSlide(i)} style={{ width: 8, height: 8, borderRadius: "50%", border: "none", cursor: "pointer", background: i === slide ? "white" : "rgba(255,255,255,0.3)", padding: 0 }} />
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 32px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+        <Logo size={28} light />
+        {/* Member selector pills */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>
+          {members.map((m, i) => (
+            <button key={m.id} onClick={() => setMemberIdx(i)} style={{
+              padding: "4px 12px", borderRadius: 20, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "inherit",
+              background: i === memberIdx ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.15)",
+              color: i === memberIdx ? P.gray700 : "white",
+              transition: "all 0.15s"
+            }}>{m.user_name}</button>
           ))}
         </div>
         <button onClick={onExit} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 20, padding: "8px 16px", color: "white", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
           <Minimize2 size={13} />Exit
         </button>
       </div>
+
+      {/* Slide dots */}
+      <div style={{ display: "flex", justifyContent: "center", gap: 8, paddingTop: 12 }}>
+        {slides.map((s, i) => (
+          <button key={s.key} onClick={() => setSlide(i)} style={{ width: 8, height: 8, borderRadius: "50%", border: "none", cursor: "pointer", background: i === slide ? "white" : "rgba(255,255,255,0.3)", padding: 0 }} />
+        ))}
+      </div>
+
+      {/* Slide content */}
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 32, overflow: "auto" }}>
         {current?.key === "intro" && (
           <div style={{ textAlign: "center" }}>
@@ -239,35 +315,178 @@ function PresentMode({ member, weekData, onExit }) {
           </div>
         )}
       </div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 32px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-        <button onClick={() => setSlide(s => Math.max(s - 1, 0))} disabled={slide === 0} style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 20, padding: "10px 20px", color: slide === 0 ? "rgba(255,255,255,0.3)" : "white", fontWeight: 700, fontSize: 13, cursor: slide === 0 ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
-          <ChevronLeft size={16} />Previous
+
+      {/* Footer nav */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 32px", borderTop: "1px solid rgba(255,255,255,0.1)", gap: 12 }}>
+        {/* Slide prev */}
+        <button onClick={() => setSlide(s => Math.max(s - 1, 0))} disabled={slide === 0} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 20, padding: "10px 16px", color: slide === 0 ? "rgba(255,255,255,0.3)" : "white", fontWeight: 700, fontSize: 13, cursor: slide === 0 ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
+          <ChevronLeft size={15} />Prev Slide
         </button>
-        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>{slide + 1} / {slides.length} · {current?.label}</span>
-        <button onClick={() => setSlide(s => Math.min(s + 1, slides.length - 1))} disabled={slide === slides.length - 1} style={{ display: "flex", alignItems: "center", gap: 8, background: slide === slides.length - 1 ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.9)", border: "none", borderRadius: 20, padding: "10px 20px", color: slide === slides.length - 1 ? "rgba(255,255,255,0.3)" : P.gray700, fontWeight: 700, fontSize: 13, cursor: slide === slides.length - 1 ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
-          Next<ChevronRight size={16} />
+
+        {/* Center: person nav */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button onClick={goPrevPerson} disabled={memberIdx === 0} style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 20, padding: "10px 14px", color: memberIdx === 0 ? "rgba(255,255,255,0.3)" : "white", cursor: memberIdx === 0 ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center" }}>
+            <ChevronLeft size={15} />
+          </button>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontWeight: 700 }}>{memberIdx + 1} / {members.length}</span>
+          <button onClick={goNextPerson} disabled={memberIdx === members.length - 1} style={{ background: memberIdx < members.length - 1 ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.1)", border: "none", borderRadius: 20, padding: "10px 20px", color: memberIdx < members.length - 1 ? P.gray700 : "rgba(255,255,255,0.3)", fontWeight: 800, fontSize: 13, cursor: memberIdx < members.length - 1 ? "pointer" : "not-allowed", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}>
+            Next Person <ChevronRight size={15} />
+          </button>
+        </div>
+
+        {/* Slide next */}
+        <button onClick={() => setSlide(s => Math.min(s + 1, slides.length - 1))} disabled={slide === slides.length - 1} style={{ display: "flex", alignItems: "center", gap: 6, background: slide < slides.length - 1 ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.1)", border: "none", borderRadius: 20, padding: "10px 16px", color: slide < slides.length - 1 ? P.gray700 : "rgba(255,255,255,0.3)", fontWeight: 700, fontSize: 13, cursor: slide < slides.length - 1 ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
+          Next Slide<ChevronRight size={15} />
         </button>
       </div>
     </div>
   );
 }
 
+// ── History View ──────────────────────────────────────────────────────────────
+function HistoryView({ member, onBack }) {
+  const [weeks, setWeeks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedWeek, setSelectedWeek] = useState(null);
+
+  useEffect(() => { loadHistory(); }, [member.id]);
+
+  async function loadHistory() {
+    setLoading(true);
+    const { data } = await supabase.from("member_week_data").select("*").eq("member_id", member.id).order("week_key", { ascending: false }).limit(12);
+    setWeeks(data || []);
+    setLoading(false);
+  }
+
+  if (selectedWeek) {
+    const timeSlices = (selectedWeek.time || []).map((t, i) => ({ label: t.label, value: parseFloat(t.value) || 0, color: SWATCHES[i % SWATCHES.length], pct: t.value })).filter(s => s.value > 0);
+    const totalPct = (selectedWeek.time || []).reduce((s, t) => s + (parseFloat(t.value) || 0), 0);
+    return (
+      <div style={{ minHeight: "100vh", background: P.gray50, padding: 24, fontFamily: "'DM Sans', sans-serif" }}>
+        <div style={{ maxWidth: 440, margin: "0 auto" }}>
+          <button onClick={() => setSelectedWeek(null)} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: P.gray400, fontSize: 13, cursor: "pointer", fontWeight: 700, marginBottom: 24, fontFamily: "inherit" }}><ArrowLeft size={16} />Back to History</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+            <Avatar name={member.user_name} size={44} />
+            <div>
+              <p style={{ fontWeight: 900, fontSize: 18, color: P.gray700, margin: 0 }}>{member.user_name}</p>
+              <p style={{ fontSize: 12, color: P.gray400, margin: 0 }}>{getWeekLabel(selectedWeek.week_key)}</p>
+            </div>
+          </div>
+
+          {selectedWeek.metrics?.length > 0 && (
+            <div style={{ ...card, padding: 20, marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}><BarChart2 size={14} color={P.red} /><span style={{ fontWeight: 800, fontSize: 14, color: P.gray700 }}>Metrics</span></div>
+              {selectedWeek.metrics.map((m, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < selectedWeek.metrics.length - 1 ? `1px solid ${P.gray100}` : "none" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: SWATCHES[i % SWATCHES.length] }} />
+                    <span style={{ fontSize: 13, color: P.gray700, fontWeight: 600 }}>{m.label}</span>
+                  </div>
+                  <span style={{ fontSize: 16, fontWeight: 900, color: P.gray700 }}>{m.value || "—"}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {selectedWeek.time?.length > 0 && (
+            <div style={{ ...card, padding: 20, marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}><PieChart size={14} color={P.red} /><span style={{ fontWeight: 800, fontSize: 14, color: P.gray700 }}>Time Breakdown</span></div>
+              <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+                <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: P.gray100 }] : [])]} size={140} label={`${totalPct.toFixed(0)}%`} />
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+                  {timeSlices.map((t, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: t.color, flexShrink: 0 }} />
+                      <span style={{ fontSize: 12, color: P.gray700, flex: 1 }}>{t.label}</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: P.gray700 }}>{t.pct}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {selectedWeek.notes?.trim() && (
+            <div style={{ ...card, padding: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}><StickyNote size={14} color={P.red} /><span style={{ fontWeight: 800, fontSize: 14, color: P.gray700 }}>Notes</span></div>
+              <p style={{ fontSize: 13, color: P.gray700, lineHeight: 1.7, whiteSpace: "pre-wrap", margin: 0 }}>{selectedWeek.notes}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", background: P.gray50, padding: 24, fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ maxWidth: 440, margin: "0 auto" }}>
+        <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: P.gray400, fontSize: 13, cursor: "pointer", fontWeight: 700, marginBottom: 24, fontFamily: "inherit" }}><ArrowLeft size={16} />Back</button>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+          <Avatar name={member.user_name} size={44} />
+          <div>
+            <p style={{ fontWeight: 900, fontSize: 20, color: P.gray700, margin: 0 }}>{member.user_name}</p>
+            <p style={{ fontSize: 12, color: P.gray400, margin: 0 }}>Past 12 weeks</p>
+          </div>
+        </div>
+        {loading ? (
+          <div style={{ display: "flex", justifyContent: "center", padding: 48 }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", border: `3px solid ${P.redMid}`, borderTopColor: P.red, animation: "spin 0.8s linear infinite" }} />
+            <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
+          </div>
+        ) : weeks.length === 0 ? (
+          <div style={{ ...card, padding: 32, textAlign: "center" }}>
+            <p style={{ fontSize: 14, color: P.gray400 }}>No history yet — data will appear here after each week.</p>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {weeks.map((w, i) => {
+              const isCurrentWeek = w.week_key === getWeekKey();
+              const metricCount = w.metrics?.length || 0;
+              const timeCount = w.time?.length || 0;
+              const hasNotes = w.notes?.trim();
+              return (
+                <div key={w.week_key} onClick={() => setSelectedWeek(w)} style={{ ...card, padding: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 14, borderLeft: isCurrentWeek ? `4px solid ${P.red}` : "4px solid transparent" }}
+                  onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.1)"}
+                  onMouseLeave={e => e.currentTarget.style.boxShadow = "0 1px 8px rgba(0,0,0,0.08)"}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontWeight: 800, fontSize: 14, color: P.gray700 }}>{getWeekLabel(w.week_key)}</span>
+                      {isCurrentWeek && <span style={{ fontSize: 10, fontWeight: 800, background: P.redLight, color: P.red, padding: "2px 8px", borderRadius: 20 }}>Current</span>}
+                    </div>
+                    <div style={{ display: "flex", gap: 12 }}>
+                      {metricCount > 0 && <span style={{ fontSize: 11, color: P.gray400 }}>📊 {metricCount} metrics</span>}
+                      {timeCount > 0 && <span style={{ fontSize: 11, color: P.gray400 }}>⏱ {timeCount} categories</span>}
+                      {hasNotes && <span style={{ fontSize: 11, color: P.gray400 }}>📝 Notes</span>}
+                    </div>
+                  </div>
+                  <ChevronRight size={16} color={P.gray400} />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Person View ───────────────────────────────────────────────────────────────
-function PersonView({ member, isOwnProfile, onBack }) {
+function PersonView({ member, isOwnProfile, onBack, members, weekDataMap, onPresentAll }) {
   const weekKey = getWeekKey();
   const weekLabel = getWeekLabel();
   const [tab, setTab] = useState("metrics");
   const [weekData, setWeekData] = useState({ metrics: [], time: [], notes: "" });
   const [nML, setNML] = useState(""); const [nMV, setNMV] = useState("");
   const [nTL, setNTL] = useState(""); const [nTV, setNTV] = useState("");
-  const [presenting, setPresenting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => { loadWeekData(); }, [member.id]);
 
   async function loadWeekData() {
     const { data } = await supabase.from("member_week_data").select("*").eq("member_id", member.id).eq("week_key", weekKey).single();
     if (data) setWeekData({ metrics: data.metrics || [], time: data.time || [], notes: data.notes || "" });
+    else setWeekData({ metrics: [], time: [], notes: "" });
   }
 
   async function persist(update) {
@@ -299,7 +518,9 @@ function PersonView({ member, isOwnProfile, onBack }) {
   const timeSlices = weekData.time.map((t, i) => ({ label: t.label, value: parseFloat(t.value) || 0, color: SWATCHES[i % SWATCHES.length], pct: t.value })).filter(s => s.value > 0);
   const inp = (extra = {}) => ({ padding: "10px 12px", border: `1.5px solid ${P.gray200}`, borderRadius: 10, fontSize: 13, outline: "none", background: P.gray50, color: P.gray700, fontFamily: "inherit", ...extra });
 
-  if (presenting) return <PresentMode member={member} weekData={weekData} onExit={() => setPresenting(false)} />;
+  if (showHistory) return <HistoryView member={member} onBack={() => setShowHistory(false)} />;
+
+  const memberIndex = members ? members.findIndex(m => m.id === member.id) : 0;
 
   return (
     <div style={{ minHeight: "100vh", background: P.gray50, padding: 24, fontFamily: "'DM Sans', sans-serif" }}>
@@ -313,9 +534,14 @@ function PersonView({ member, isOwnProfile, onBack }) {
               <p style={{ fontSize: 12, color: P.gray400, margin: 0 }}>{weekLabel} {saving && "· Saving..."}</p>
             </div>
           </div>
-          <button onClick={() => setPresenting(true)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 20, border: "none", background: P.red, color: "white", fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
-            <Maximize2 size={14} />Present
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => setShowHistory(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 20, border: `1.5px solid ${P.gray200}`, background: P.white, color: P.gray400, fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
+              <History size={13} />History
+            </button>
+            <button onClick={() => onPresentAll(memberIndex)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 20, border: "none", background: P.red, color: "white", fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+              <Maximize2 size={14} />Present
+            </button>
+          </div>
         </div>
         <div style={{ display: "flex", background: P.gray100, borderRadius: 14, padding: 4, marginBottom: 20, gap: 4 }}>
           {["metrics", "time", "notes"].map(t => <Tab key={t} label={t.charAt(0).toUpperCase() + t.slice(1)} active={tab === t} onClick={() => setTab(t)} />)}
@@ -345,7 +571,7 @@ function PersonView({ member, isOwnProfile, onBack }) {
               {isOwnProfile && (
                 <div style={{ display: "flex", gap: 8, paddingTop: 12, borderTop: `1px solid ${P.gray100}` }}>
                   <input style={inp({ flex: 1 })} value={nML} onChange={e => setNML(e.target.value)} onKeyPress={e => e.key === "Enter" && addMetric()} placeholder="Metric name" />
-                  <input style={inp({ width: 110 })} value={nMV} onChange={e => setNMV(e.target.value)} onKeyPress={e => e.key === "Enter" && addMetric()} placeholder="Value" />
+                  <input style={inp({ width: 120 })} value={nMV} onChange={e => setNMV(e.target.value)} onKeyPress={e => e.key === "Enter" && addMetric()} placeholder="Value" />
                   <button onClick={addMetric} disabled={!nML.trim()} style={{ background: nML.trim() ? P.red : P.gray200, border: "none", borderRadius: 10, width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", cursor: nML.trim() ? "pointer" : "not-allowed" }}><Plus size={16} color="white" /></button>
                 </div>
               )}
@@ -356,23 +582,22 @@ function PersonView({ member, isOwnProfile, onBack }) {
         {tab === "time" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div style={{ ...card, padding: 24 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}><PieChart size={15} color={P.red} /><span style={{ fontWeight: 800, fontSize: 14, color: P.gray700 }}>Time Distribution</span></div>
-              <div style={{ display: "flex", justifyContent: "center" }}>
-                <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 && totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: P.gray100 }] : [])]} size={200} label={totalPct === 100 ? "100%\nallocated" : `${totalPct.toFixed(0)}%\nof 100%`} />
-              </div>
-            </div>
-            <div style={{ ...card, padding: 24 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Clock size={15} color={P.red} /><span style={{ fontWeight: 800, fontSize: 14, color: P.gray700 }}>Time Breakdown</span></div>
-                <span style={{ fontSize: 12, fontWeight: 800, padding: "4px 10px", borderRadius: 20, background: totalPct === 100 ? "#e8f5e9" : P.redLight, color: totalPct === 100 ? "#2e7d32" : P.red }}>{totalPct.toFixed(0)}%/100%</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}><PieChart size={15} color={P.red} /><span style={{ fontWeight: 800, fontSize: 14, color: P.gray700 }}>Time Breakdown</span></div>
+                <span style={{ fontSize: 12, color: totalPct > 100 ? P.red : P.gray400, fontWeight: 700 }}>{totalPct.toFixed(0)}% / 100%</span>
               </div>
-              {!weekData.time.length && <p style={{ fontSize: 13, color: P.gray400, marginBottom: 12 }}>{isOwnProfile ? "No categories yet." : "No time data entered yet."}</p>}
+              {timeSlices.length > 0 && (
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+                  <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: P.gray100 }] : [])]} size={160} label={`${totalPct.toFixed(0)}%\nallocated`} />
+                </div>
+              )}
+              {!weekData.time.length && <p style={{ fontSize: 13, color: P.gray400, marginBottom: 12 }}>{isOwnProfile ? "No time breakdown yet." : "No time data entered."}</p>}
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
                 {weekData.time.map((t, i) => (
                   <div key={i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <div style={{ width: 10, height: 10, borderRadius: "50%", background: SWATCHES[i % SWATCHES.length], flexShrink: 0 }} />
-                    <input style={inp({ flex: 1 })} value={t.label} onChange={e => updateTime(i, "label", e.target.value)} disabled={!isOwnProfile} />
-                    <div style={{ position: "relative", width: 80 }}><input style={inp({ width: "100%", textAlign: "right", paddingRight: 20, boxSizing: "border-box" })} value={t.value} onChange={e => updateTime(i, "value", e.target.value.replace(/[^0-9.]/g, ""))} disabled={!isOwnProfile} /><span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: P.gray400 }}>%</span></div>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: SWATCHES[i % SWATCHES.length], flexShrink: 0 }} />
+                    <input style={inp({ flex: 1 })} value={t.label} onChange={e => updateTime(i, "label", e.target.value)} placeholder="Category" disabled={!isOwnProfile} />
+                    <div style={{ position: "relative", width: 80 }}><input style={inp({ width: "100%", textAlign: "right", paddingRight: 20, boxSizing: "border-box" })} value={t.value} onChange={e => updateTime(i, "value", e.target.value.replace(/[^0-9.]/g, ""))} placeholder="0" disabled={!isOwnProfile} /><span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: P.gray400 }}>%</span></div>
                     {isOwnProfile && <button onClick={() => removeTime(i)} style={{ background: P.gray100, border: "none", borderRadius: "50%", width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={12} color={P.gray400} /></button>}
                   </div>
                 ))}
@@ -402,6 +627,40 @@ function PersonView({ member, isOwnProfile, onBack }) {
             <p style={{ fontSize: 11, color: P.gray400, marginTop: 8, textAlign: "right" }}>{(weekData.notes || "").length} chars</p>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── Team History View ─────────────────────────────────────────────────────────
+function TeamHistoryView({ members, onBack, onSelectMember }) {
+  const pastWeeks = Array.from({ length: 8 }, (_, i) => ({
+    key: getWeekKey(-i),
+    label: getWeekLabel(getWeekKey(-i)),
+    isCurrent: i === 0
+  }));
+
+  return (
+    <div style={{ minHeight: "100vh", background: P.gray50, padding: 24, fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ maxWidth: 440, margin: "0 auto" }}>
+        <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: P.gray400, fontSize: 13, cursor: "pointer", fontWeight: 700, marginBottom: 24, fontFamily: "inherit" }}><ArrowLeft size={16} />Back</button>
+        <p style={{ fontWeight: 900, fontSize: 22, color: P.gray700, marginBottom: 8 }}>Team History</p>
+        <p style={{ fontSize: 13, color: P.gray400, marginBottom: 24 }}>Tap a team member to see their history across all weeks.</p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {members.map(m => (
+            <div key={m.id} onClick={() => onSelectMember(m)} style={{ ...card, padding: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 14 }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.1)"}
+              onMouseLeave={e => e.currentTarget.style.boxShadow = "0 1px 8px rgba(0,0,0,0.08)"}>
+              <Avatar name={m.user_name} size={44} />
+              <div style={{ flex: 1 }}>
+                <p style={{ fontWeight: 800, fontSize: 15, color: P.gray700, margin: 0 }}>{m.user_name}</p>
+                <p style={{ fontSize: 12, color: P.gray400, margin: 0 }}>View weekly history</p>
+              </div>
+              <ChevronRight size={16} color={P.gray400} />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -438,7 +697,7 @@ function SummaryPanel({ members, onClose }) {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setSummary(data.summary);
-    } catch { setError("Something went wrong. Try again."); }
+    } catch(e) { setError("Something went wrong. Try again."); }
     setLoading(false);
   }
 
@@ -501,6 +760,11 @@ export default function TeamApp() {
   const [duration, setDuration] = useState(30);
   const [teamNotes, setTeamNotes] = useState("");
   const [showTeamNotes, setShowTeamNotes] = useState(false);
+  const [showTeamHistory, setShowTeamHistory] = useState(false);
+  const [historyMember, setHistoryMember] = useState(null);
+  const [presenting, setPresenting] = useState(false);
+  const [presentStartIdx, setPresentStartIdx] = useState(0);
+  const [weekDataMap, setWeekDataMap] = useState({});
 
   useEffect(() => { if (user) loadTeam(); }, [teamId, user]);
 
@@ -510,15 +774,22 @@ export default function TeamApp() {
     if (!teamData) { navigate("/dashboard"); return; }
     setTeam(teamData);
     setDuration(teamData.duration || 30);
-
     const { data: membersData } = await supabase.from("team_members").select("*").eq("team_id", teamId).order("created_at");
     setMembers(membersData || []);
     const me = (membersData || []).find(m => m.user_id === user.id);
     if (!me) { navigate("/dashboard"); return; }
     setMyRole(me.role);
-
     const { data: notesData } = await supabase.from("team_notes").select("notes").eq("team_id", teamId).eq("week_key", getWeekKey()).single();
     if (notesData) setTeamNotes(notesData.notes || "");
+
+    // Load all week data for present mode
+    const weekKey = getWeekKey();
+    const map = {};
+    for (const m of (membersData || [])) {
+      const { data } = await supabase.from("member_week_data").select("*").eq("member_id", m.id).eq("week_key", weekKey).single();
+      if (data) map[m.id] = data;
+    }
+    setWeekDataMap(map);
     setLoading(false);
   }
 
@@ -544,6 +815,12 @@ export default function TeamApp() {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  function handlePresentAll(startIdx = 0) {
+    setPresentStartIdx(startIdx);
+    setPresenting(true);
+    setSelectedMember(null);
+  }
+
   const isAdmin = myRole === "admin";
   const myMember = members.find(m => m.user_id === user.id);
 
@@ -554,10 +831,17 @@ export default function TeamApp() {
     </div>
   );
 
+  if (presenting) return <PresentMode members={members} initialMemberIndex={presentStartIdx} weekDataMap={weekDataMap} onExit={() => setPresenting(false)} />;
+
+  if (historyMember) return <HistoryView member={historyMember} onBack={() => setHistoryMember(null)} />;
+
+  if (showTeamHistory) return <TeamHistoryView members={members} onBack={() => setShowTeamHistory(false)} onSelectMember={m => { setShowTeamHistory(false); setHistoryMember(m); }} />;
+
   if (selectedMember) {
     const isOwnProfile = selectedMember.user_id === user.id;
-    return <PersonView member={selectedMember} isOwnProfile={isOwnProfile} onBack={() => setSelectedMember(null)} />;
+    return <PersonView member={selectedMember} isOwnProfile={isOwnProfile} onBack={() => setSelectedMember(null)} members={members} weekDataMap={weekDataMap} onPresentAll={handlePresentAll} />;
   }
+
   if (showSummary) return <SummaryPanel members={members} onClose={() => setShowSummary(false)} />;
 
   if (showTeamNotes) return (
@@ -579,7 +863,6 @@ export default function TeamApp() {
 
   return (
     <div style={{ minHeight: "100vh", background: P.gray50, fontFamily: "'DM Sans', sans-serif" }}>
-      {/* Nav */}
       <nav style={{ background: P.white, borderBottom: `1px solid ${P.gray100}`, padding: "0 24px", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: 440, margin: "0 auto", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -595,8 +878,11 @@ export default function TeamApp() {
       </nav>
 
       <div style={{ maxWidth: 440, margin: "0 auto", padding: 24 }}>
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ fontSize: 10, fontWeight: 800, color: P.gray400, letterSpacing: 2, marginBottom: 4 }}>THIS WEEK</p>
+          <p style={{ fontSize: 16, fontWeight: 900, color: P.gray700 }}>{getWeekLabel()}</p>
+        </div>
 
-        {/* Admin Settings */}
         {isAdmin && (
           <div style={{ ...card, padding: 20, marginBottom: 16, borderTop: `3px solid ${P.red}` }}>
             <button onClick={() => setShowSettings(!showSettings)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
@@ -635,7 +921,6 @@ export default function TeamApp() {
 
         <MeetingTimer duration={duration} />
 
-        {/* Actions */}
         <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
           <button onClick={() => setOrder([...members].sort(() => Math.random() - .5))} disabled={!members.length}
             style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "14px 20px", borderRadius: 24, border: "none", cursor: "pointer", fontWeight: 900, fontSize: 15, background: P.red, color: "white", boxShadow: "0 4px 12px rgba(230,0,35,.25)", fontFamily: "inherit" }}>
@@ -647,7 +932,12 @@ export default function TeamApp() {
           </button>
         </div>
 
-        {/* Order */}
+        {/* Present All button */}
+        <button onClick={() => handlePresentAll(0)}
+          style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 24, border: `2px solid ${P.gray200}`, background: P.white, color: P.gray700, fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit", marginBottom: 16 }}>
+          <Maximize2 size={16} />Present All Members
+        </button>
+
         {order.length > 0 && (
           <div style={{ ...card, padding: 24, marginBottom: 16 }}>
             <p style={{ fontSize: 10, fontWeight: 800, color: P.gray400, letterSpacing: 2, marginBottom: 14 }}>TODAY'S ORDER</p>
@@ -664,7 +954,6 @@ export default function TeamApp() {
           </div>
         )}
 
-        {/* My profile shortcut */}
         {myMember && (
           <div onClick={() => setSelectedMember(myMember)} style={{ ...card, padding: 16, marginBottom: 16, cursor: "pointer", borderLeft: `4px solid ${P.red}`, display: "flex", alignItems: "center", gap: 12 }}
             onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 16px rgba(230,0,35,0.1)"}
@@ -678,7 +967,6 @@ export default function TeamApp() {
           </div>
         )}
 
-        {/* Team members */}
         <div style={{ ...card }}>
           <button onClick={() => setMembersOpen(!membersOpen)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: 20, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -706,6 +994,10 @@ export default function TeamApp() {
             </div>
           )}
         </div>
+
+        <button onClick={() => setShowTeamHistory(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 24, border: `2px solid ${P.gray200}`, background: P.white, color: P.gray700, fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit", marginTop: 12 }}>
+          <History size={16} />Team History
+        </button>
 
         <p style={{ textAlign: "center", fontSize: 11, color: P.gray200, fontWeight: 700, marginTop: 24, letterSpacing: .5 }}>QUORUM · BEFORE, DURING, AND AFTER</p>
       </div>
