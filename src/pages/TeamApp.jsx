@@ -890,130 +890,99 @@ export default function TeamApp() {
 
   return (
     <div style={{ minHeight: "100vh", background: P.gray50, fontFamily: "'DM Sans', sans-serif" }}>
-      <nav style={{ background: P.white, borderBottom: `1px solid ${P.gray100}`, padding: "0 24px", position: "sticky", top: 0, zIndex: 10 }}>
-        <div style={{ maxWidth: 440, margin: "0 auto", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button onClick={() => navigate("/dashboard")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: P.gray400, padding: 4 }}><ArrowLeft size={16} /></button>
-            <Logo size={26} />
+      <nav style={{ background: P.white, borderBottom: `1px solid ${P.gray100}`, padding: "0 32px", position: "sticky", top: 0, zIndex: 10 }}>
+        <div style={{ maxWidth: 600, margin: "0 auto", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button onClick={() => navigate("/dashboard")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: P.gray400, padding: 6 }}><ArrowLeft size={18} /></button>
+            <Logo size={28} />
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: P.gray700 }}>{team?.name}</div>
-            {isAdmin && <span style={{ fontSize: 10, fontWeight: 800, background: P.redLight, color: P.red, padding: "2px 8px", borderRadius: 20 }}>ADMIN</span>}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: P.gray700 }}>{team?.name}</div>
+            {isAdmin && <span style={{ fontSize: 10, fontWeight: 800, background: P.redLight, color: P.red, padding: "3px 10px", borderRadius: 20 }}>ADMIN</span>}
             <UserButton afterSignOutUrl="/" />
           </div>
         </div>
       </nav>
 
-      <div style={{ maxWidth: 440, margin: "0 auto", padding: 24 }}>
-        <div style={{ marginBottom: 16 }}>
-          <p style={{ fontSize: 10, fontWeight: 800, color: P.gray400, letterSpacing: 2, marginBottom: 4 }}>THIS WEEK</p>
-          <p style={{ fontSize: 16, fontWeight: 900, color: P.gray700 }}>{getWeekLabel()}</p>
+      <div style={{ maxWidth: 600, margin: "0 auto", padding: "32px 24px" }}>
+
+        {/* Week header */}
+        <div style={{ marginBottom: 28 }}>
+          <p style={{ fontSize: 11, fontWeight: 800, color: P.gray400, letterSpacing: 2, marginBottom: 6 }}>THIS WEEK</p>
+          <p style={{ fontSize: 20, fontWeight: 900, color: P.gray700 }}>{getWeekLabel()}</p>
         </div>
 
-        {isAdmin && (
-          <div style={{ ...card, padding: 20, marginBottom: 16, borderTop: `3px solid ${P.red}` }}>
-            <button onClick={() => setShowSettings(!showSettings)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Crown size={16} color={P.red} />
-                <span style={{ fontWeight: 800, fontSize: 14, color: P.gray700 }}>Admin Settings</span>
-              </div>
-              {showSettings ? <ChevronUp size={16} color={P.gray400} /> : <ChevronDown size={16} color={P.gray400} />}
-            </button>
-            {showSettings && (
-              <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${P.gray100}`, display: "flex", flexDirection: "column", gap: 14 }}>
-                <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: P.gray400, letterSpacing: 1, marginBottom: 6 }}>INVITE CODE</label>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <div style={{ flex: 1, background: P.gray50, border: `1.5px solid ${P.gray200}`, borderRadius: 10, padding: "10px 14px", fontSize: 16, fontWeight: 900, letterSpacing: 3, color: P.gray700 }}>{team?.invite_code}</div>
-                    <button onClick={copyCode} style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 14px", borderRadius: 10, border: "none", background: copied ? "#e8f5e9" : P.redLight, color: copied ? "#2e7d32" : P.red, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
-                      {copied ? <><Check size={14} />Copied</> : <><Copy size={14} />Copy</>}
-                    </button>
-                  </div>
-                  <p style={{ fontSize: 11, color: P.gray400, marginTop: 6 }}>Share this code so teammates can join at quorum-lac.vercel.app</p>
-                </div>
-                <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: P.gray400, letterSpacing: 1, marginBottom: 6 }}>MEETING DURATION (MIN)</label>
-                  <input type="number" min="1" max="480" value={duration} onChange={e => saveDuration(parseInt(e.target.value) || 30)}
-                    style={{ padding: "10px 14px", border: `1.5px solid ${P.gray200}`, borderRadius: 10, fontSize: 13, outline: "none", background: P.white, color: P.gray700, width: 100, fontFamily: "inherit" }} />
-                </div>
-                <div style={{ paddingTop: 12, borderTop: `1px solid ${P.redMid}` }}>
-                  <button onClick={() => setShowSummary(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: 14, borderRadius: 12, border: "none", background: P.red, color: "white", fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
-                    <FileText size={15} />Generate Executive Summary
-                  </button>
-                </div>
-              </div>
-            )}
+        {/* My Update — most important, at top */}
+        {myMember && (
+          <div onClick={() => setSelectedMember(myMember)} style={{ ...card, padding: 20, marginBottom: 24, cursor: "pointer", borderLeft: `4px solid ${P.red}`, display: "flex", alignItems: "center", gap: 16 }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 20px rgba(230,0,35,0.12)"}
+            onMouseLeave={e => e.currentTarget.style.boxShadow = "0 1px 8px rgba(0,0,0,0.08)"}>
+            <Avatar name={myMember.user_name} size={48} />
+            <div style={{ flex: 1 }}>
+              <p style={{ fontWeight: 900, fontSize: 16, color: P.gray700, margin: 0 }}>My Update</p>
+              <p style={{ fontSize: 13, color: P.gray400, margin: "4px 0 0" }}>Add your metrics, time breakdown & notes</p>
+            </div>
+            <ChevronRight size={18} color={P.gray400} />
           </div>
         )}
 
-        <MeetingTimer duration={duration} />
-
-        <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+        {/* Action row */}
+        <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
           <button onClick={() => setOrder([...members].sort(() => Math.random() - .5))} disabled={!members.length}
-            style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "14px 20px", borderRadius: 24, border: "none", cursor: "pointer", fontWeight: 900, fontSize: 15, background: P.red, color: "white", boxShadow: "0 4px 12px rgba(230,0,35,.25)", fontFamily: "inherit" }}>
+            style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "16px 20px", borderRadius: 16, border: "none", cursor: "pointer", fontWeight: 900, fontSize: 15, background: P.red, color: "white", boxShadow: "0 4px 16px rgba(230,0,35,.2)", fontFamily: "inherit" }}>
             <Shuffle size={18} />Generate Order
           </button>
+          <button onClick={() => handlePresentAll(0)}
+            style={{ display: "flex", alignItems: "center", gap: 8, padding: "16px 20px", borderRadius: 16, border: `2px solid ${P.gray200}`, background: P.white, color: P.gray700, fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+            <Maximize2 size={16} />Present
+          </button>
           <button onClick={() => setShowTeamNotes(true)}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "14px 16px", borderRadius: 24, border: `2px solid ${P.redMid}`, background: P.redLight, color: P.red, fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "16px 16px", borderRadius: 16, border: `2px solid ${P.redMid}`, background: P.redLight, color: P.red, fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
             <MessageSquare size={16} />Notes
           </button>
         </div>
 
-        {/* Present All button */}
-        <button onClick={() => handlePresentAll(0)}
-          style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 24, border: `2px solid ${P.gray200}`, background: P.white, color: P.gray700, fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit", marginBottom: 16 }}>
-          <Maximize2 size={16} />Present All Members
-        </button>
-
+        {/* Today's order */}
         {order.length > 0 && (
-          <div style={{ ...card, padding: 24, marginBottom: 16 }}>
-            <p style={{ fontSize: 10, fontWeight: 800, color: P.gray400, letterSpacing: 2, marginBottom: 14 }}>TODAY'S ORDER</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ ...card, padding: 24, marginBottom: 24 }}>
+            <p style={{ fontSize: 11, fontWeight: 800, color: P.gray400, letterSpacing: 2, marginBottom: 16 }}>TODAY'S ORDER</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {order.map((m, i) => (
-                <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12, background: i === 0 ? P.redLight : P.gray50 }}>
-                  <span style={{ fontSize: 16, fontWeight: 900, color: P.red, width: 24, textAlign: "center" }}>{i + 1}</span>
-                  <Avatar name={m.user_name} size={34} />
-                  <span style={{ fontWeight: 700, fontSize: 14, color: P.gray700, flex: 1 }}>{m.user_name}</span>
-                  {i === 0 && <span style={{ fontSize: 11, fontWeight: 800, background: P.red, color: "white", padding: "3px 10px", borderRadius: 20 }}>First up</span>}
+                <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", borderRadius: 14, background: i === 0 ? P.redLight : P.gray50 }}>
+                  <span style={{ fontSize: 18, fontWeight: 900, color: P.red, width: 28, textAlign: "center" }}>{i + 1}</span>
+                  <Avatar name={m.user_name} size={36} />
+                  <span style={{ fontWeight: 700, fontSize: 15, color: P.gray700, flex: 1 }}>{m.user_name}</span>
+                  {i === 0 && <span style={{ fontSize: 11, fontWeight: 800, background: P.red, color: "white", padding: "4px 12px", borderRadius: 20 }}>First up</span>}
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {myMember && (
-          <div onClick={() => setSelectedMember(myMember)} style={{ ...card, padding: 16, marginBottom: 16, cursor: "pointer", borderLeft: `4px solid ${P.red}`, display: "flex", alignItems: "center", gap: 12 }}
-            onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 16px rgba(230,0,35,0.1)"}
-            onMouseLeave={e => e.currentTarget.style.boxShadow = "0 1px 8px rgba(0,0,0,0.08)"}>
-            <Avatar name={myMember.user_name} size={40} />
-            <div style={{ flex: 1 }}>
-              <p style={{ fontWeight: 800, fontSize: 14, color: P.gray700 }}>My Update</p>
-              <p style={{ fontSize: 12, color: P.gray400 }}>Add your metrics, time & notes</p>
-            </div>
-            <ChevronRight size={16} color={P.gray400} />
-          </div>
-        )}
+        {/* Meeting Timer */}
+        <MeetingTimer duration={duration} />
 
-        <div style={{ ...card }}>
-          <button onClick={() => setMembersOpen(!membersOpen)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: 20, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+        {/* Team members */}
+        <div style={{ ...card, marginBottom: 12 }}>
+          <button onClick={() => setMembersOpen(!membersOpen)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: 22, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Users size={18} color={P.gray400} />
               <span style={{ fontWeight: 900, fontSize: 16, color: P.gray700 }}>Team</span>
-              <span style={{ fontSize: 12, color: P.gray400, fontWeight: 600 }}>{members.length} members</span>
+              <span style={{ fontSize: 13, color: P.gray400, fontWeight: 600 }}>{members.length} members</span>
             </div>
             {membersOpen ? <ChevronUp size={18} color={P.gray400} /> : <ChevronDown size={18} color={P.gray400} />}
           </button>
           {membersOpen && (
-            <div style={{ padding: "0 20px 20px", borderTop: `1px solid ${P.gray100}` }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 16 }}>
+            <div style={{ padding: "0 22px 22px", borderTop: `1px solid ${P.gray100}` }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16 }}>
                 {members.map(m => (
-                  <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 12, background: P.gray50 }}>
-                    <Avatar name={m.user_name} size={32} />
-                    <span style={{ flex: 1, fontWeight: 700, fontSize: 13, color: P.gray700 }}>{m.user_name}</span>
+                  <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 14, background: P.gray50 }}>
+                    <Avatar name={m.user_name} size={36} />
+                    <span style={{ flex: 1, fontWeight: 700, fontSize: 14, color: P.gray700 }}>{m.user_name}</span>
                     {m.role === "admin" && <Crown size={13} color={P.red} />}
-                    <button onClick={() => setSelectedMember(m)} style={{ padding: "5px 10px", borderRadius: 20, border: `1.5px solid ${P.gray200}`, background: P.white, color: P.gray400, fontWeight: 700, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>View</button>
+                    <button onClick={() => setSelectedMember(m)} style={{ padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${P.gray200}`, background: P.white, color: P.gray400, fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>View</button>
                     {isAdmin && m.user_id !== user.id && (
-                      <button onClick={() => removeMember(m.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><X size={13} color={P.gray400} /></button>
+                      <button onClick={() => removeMember(m.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><X size={14} color={P.gray400} /></button>
                     )}
                   </div>
                 ))}
@@ -1022,11 +991,49 @@ export default function TeamApp() {
           )}
         </div>
 
-        <button onClick={() => setShowTeamHistory(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 24, border: `2px solid ${P.gray200}`, background: P.white, color: P.gray700, fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit", marginTop: 12 }}>
+        {/* Team History */}
+        <button onClick={() => setShowTeamHistory(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "15px 0", borderRadius: 16, border: `2px solid ${P.gray200}`, background: P.white, color: P.gray700, fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit", marginBottom: 24 }}>
           <History size={16} />Team History
         </button>
 
-        <p style={{ textAlign: "center", fontSize: 11, color: P.gray200, fontWeight: 700, marginTop: 24, letterSpacing: .5 }}>QUORUM · BEFORE, DURING, AND AFTER</p>
+        {/* Admin Settings */}
+        {isAdmin && (
+          <div style={{ ...card, padding: 22, marginBottom: 24, borderTop: `3px solid ${P.red}` }}>
+            <button onClick={() => setShowSettings(!showSettings)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Crown size={16} color={P.red} />
+                <span style={{ fontWeight: 800, fontSize: 15, color: P.gray700 }}>Admin Settings</span>
+              </div>
+              {showSettings ? <ChevronUp size={16} color={P.gray400} /> : <ChevronDown size={16} color={P.gray400} />}
+            </button>
+            {showSettings && (
+              <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${P.gray100}`, display: "flex", flexDirection: "column", gap: 18 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: P.gray400, letterSpacing: 1, marginBottom: 8 }}>INVITE CODE</label>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    <div style={{ flex: 1, background: P.gray50, border: `1.5px solid ${P.gray200}`, borderRadius: 12, padding: "12px 16px", fontSize: 18, fontWeight: 900, letterSpacing: 4, color: P.gray700 }}>{team?.invite_code}</div>
+                    <button onClick={copyCode} style={{ display: "flex", alignItems: "center", gap: 6, padding: "12px 16px", borderRadius: 12, border: "none", background: copied ? "#e8f5e9" : P.redLight, color: copied ? "#2e7d32" : P.red, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+                      {copied ? <><Check size={14} />Copied</> : <><Copy size={14} />Copy</>}
+                    </button>
+                  </div>
+                  <p style={{ fontSize: 12, color: P.gray400, marginTop: 8 }}>Share this code so teammates can join at quorum-lac.vercel.app</p>
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: P.gray400, letterSpacing: 1, marginBottom: 8 }}>MEETING DURATION (MIN)</label>
+                  <input type="number" min="1" max="480" value={duration} onChange={e => saveDuration(parseInt(e.target.value) || 30)}
+                    style={{ padding: "12px 16px", border: `1.5px solid ${P.gray200}`, borderRadius: 12, fontSize: 14, outline: "none", background: P.white, color: P.gray700, width: 110, fontFamily: "inherit" }} />
+                </div>
+                <div style={{ paddingTop: 16, borderTop: `1px solid ${P.redMid}` }}>
+                  <button onClick={() => setShowSummary(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: 16, borderRadius: 14, border: "none", background: P.red, color: "white", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+                    <FileText size={16} />Generate Executive Summary
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <p style={{ textAlign: "center", fontSize: 11, color: P.gray200, fontWeight: 700, marginTop: 8, letterSpacing: .5 }}>QUORUM · BEFORE, DURING, AND AFTER</p>
       </div>
     </div>
   );
