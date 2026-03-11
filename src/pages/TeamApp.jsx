@@ -699,24 +699,41 @@ function TeamHistoryView({ members, onBack, onSelectMember }) {
 }
 
 // ── AI Analyst ────────────────────────────────────────────────────────────────
-function AnalystPanel({ members, onClose }) {
+function AnalystPanel({ members, teamId, userId, onClose }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [allData, setAllData] = useState("");
+  const [convId, setConvId] = useState(null);
+  const [loadingConv, setLoadingConv] = useState(true);
   const chatEndRef = useRef(null);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
   useEffect(() => {
-    async function loadHistory() {
+    async function init() {
+      // Load or create conversation record
+      const { data: existing } = await supabase
+        .from("analyst_conversations")
+        .select("*")
+        .eq("team_id", teamId)
+        .eq("user_id", userId)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .single();
+      if (existing) {
+        setConvId(existing.id);
+        setMessages(existing.messages || []);
+      }
+      setLoadingConv(false);
+
+      // Load team data
       const blocks = [];
       for (const m of members) {
         const { data } = await supabase.from("member_week_data").select("*").eq("member_id", m.id).order("week_key", { ascending: false }).limit(52);
         if (data?.length) {
           const weeks = data.map(w => {
-            // Convert week_key (e.g. 2026-W11) to date range
             const [year, wk] = w.week_key.split("-W");
             const weekNum = parseInt(wk);
             const jan4 = new Date(parseInt(year), 0, 4);
@@ -737,12 +754,20 @@ function AnalystPanel({ members, onClose }) {
           blocks.push(`### ${m.user_name}\n${weeks}`);
         }
       }
-      const block = blocks.join("\n\n");
-      setAllData(block);
+      setAllData(blocks.join("\n\n"));
       setHistoryLoaded(true);
     }
-    loadHistory();
+    init();
   }, []);
+
+  async function saveMessages(msgs) {
+    if (convId) {
+      await supabase.from("analyst_conversations").update({ messages: msgs, updated_at: new Date().toISOString() }).eq("id", convId);
+    } else {
+      const { data } = await supabase.from("analyst_conversations").insert({ team_id: teamId, user_id: userId, messages: msgs }).select().single();
+      if (data) setConvId(data.id);
+    }
+  }
 
   async function sendMessage() {
     if (!input.trim() || loading || !historyLoaded) return;
@@ -759,11 +784,20 @@ function AnalystPanel({ members, onClose }) {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      setMessages([...newMessages, { role: "assistant", content: data.answer }]);
+      const finalMessages = [...newMessages, { role: "assistant", content: data.answer }];
+      setMessages(finalMessages);
+      await saveMessages(finalMessages);
     } catch(e) {
       setMessages([...newMessages, { role: "assistant", content: "Something went wrong. Try again." }]);
     }
     setLoading(false);
+  }
+
+  async function clearConversation() {
+    setMessages([]);
+    if (convId) {
+      await supabase.from("analyst_conversations").update({ messages: [], updated_at: new Date().toISOString() }).eq("id", convId);
+    }
   }
 
   const suggestions = [
@@ -1038,6 +1072,8 @@ export default function TeamApp() {
   const [selectedMember, setSelectedMember] = useState(null);
   const [showSummary, setShowSummary] = useState(false);
   const [showAnalyst, setShowAnalyst] = useState(false);
+  const [addingMember, setAddingMember] = useState(false);
+  const [newMemberName, setNewMemberName] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -1101,6 +1137,26 @@ export default function TeamApp() {
     setOrder(order.filter(id => id !== memberId));
   }
 
+  async function toggleAdmin(member) {
+    const newRole = member.role === "admin" ? "member" : "admin";
+    await supabase.from("team_members").update({ role: newRole }).eq("id", member.id);
+    setMembers(members.map(m => m.id === member.id ? { ...m, role: newRole } : m));
+  }
+
+  async function addMemberDirectly(name) {
+    if (!name.trim()) return;
+    // Create a placeholder member with a generated user_id so they can claim it later via invite code
+    const placeholderId = "placeholder_" + Math.random().toString(36).slice(2, 10);
+    const { data, error } = await supabase.from("team_members").insert({
+      team_id: teamId,
+      user_id: placeholderId,
+      user_name: name.trim(),
+      role: "member"
+    }).select().single();
+    if (data) setMembers([...members, data]);
+    return !error;
+  }
+
   function copyCode() {
     navigator.clipboard.writeText(team.invite_code);
     setCopied(true);
@@ -1135,7 +1191,7 @@ export default function TeamApp() {
   }
 
   if (showSummary) return <SummaryPanel members={members} onClose={() => setShowSummary(false)} />;
-  if (showAnalyst) return <AnalystPanel members={members} onClose={() => setShowAnalyst(false)} />;
+  if (showAnalyst) return <AnalystPanel members={members} teamId={teamId} userId={user.id} onClose={() => setShowAnalyst(false)} />;
 
   if (showTeamNotes) return (
     <div style={{ minHeight: "100vh", background: P.gray50, padding: "40px 40px", fontFamily: "'DM Sans', sans-serif" }}>
@@ -1244,15 +1300,43 @@ export default function TeamApp() {
                 {members.map(m => (
                   <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 14, background: P.gray50 }}>
                     <Avatar name={m.user_name} size={36} />
-                    <span style={{ flex: 1, fontWeight: 700, fontSize: 14, color: P.gray700 }}>{m.user_name}</span>
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: P.gray700 }}>{m.user_name}</span>
+                      {m.user_id?.startsWith("placeholder_") && <span style={{ fontSize: 10, color: P.gray400, fontWeight: 600, marginLeft: 6 }}>· pending</span>}
+                    </div>
                     {m.role === "admin" && <Crown size={13} color={P.red} />}
-                    <button onClick={() => setSelectedMember(m)} style={{ padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${P.gray200}`, background: P.white, color: P.gray400, fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>View</button>
+                    <button onClick={() => setSelectedMember(m)} style={{ padding: "5px 12px", borderRadius: 20, border: `1.5px solid ${P.gray200}`, background: P.white, color: P.gray400, fontWeight: 700, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>View</button>
                     {isAdmin && m.user_id !== user.id && (
-                      <button onClick={() => removeMember(m.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><X size={14} color={P.gray400} /></button>
+                      <>
+                        <button onClick={() => toggleAdmin(m)} title={m.role === "admin" ? "Remove admin" : "Make admin"}
+                          style={{ padding: "5px 10px", borderRadius: 20, border: `1.5px solid ${m.role === "admin" ? P.redMid : P.gray200}`, background: m.role === "admin" ? P.redLight : P.white, color: m.role === "admin" ? P.red : P.gray400, fontWeight: 700, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
+                          {m.role === "admin" ? "Admin ✓" : "Make Admin"}
+                        </button>
+                        <button onClick={() => removeMember(m.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><X size={14} color={P.gray400} /></button>
+                      </>
                     )}
                   </div>
                 ))}
               </div>
+              {isAdmin && (
+                <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${P.gray100}` }}>
+                  {addingMember ? (
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input autoFocus value={newMemberName} onChange={e => setNewMemberName(e.target.value)}
+                        onKeyDown={async e => { if (e.key === "Enter") { await addMemberDirectly(newMemberName); setNewMemberName(""); setAddingMember(false); } if (e.key === "Escape") { setAddingMember(false); setNewMemberName(""); } }}
+                        placeholder="Member name..." style={{ flex: 1, padding: "9px 14px", border: `1.5px solid ${P.gray200}`, borderRadius: 10, fontSize: 13, outline: "none", fontFamily: "inherit", color: P.gray700, background: P.white }} />
+                      <button onClick={async () => { await addMemberDirectly(newMemberName); setNewMemberName(""); setAddingMember(false); }}
+                        style={{ padding: "9px 16px", borderRadius: 10, border: "none", background: P.red, color: "white", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Add</button>
+                      <button onClick={() => { setAddingMember(false); setNewMemberName(""); }}
+                        style={{ padding: "9px 12px", borderRadius: 10, border: `1.5px solid ${P.gray200}`, background: P.white, color: P.gray400, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setAddingMember(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 10, border: `1.5px dashed ${P.gray200}`, background: "none", color: P.gray400, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit", width: "100%", justifyContent: "center" }}>
+                      <Plus size={14} />Add Member
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
