@@ -107,14 +107,15 @@ function DonutChart({ slices, size = 220, label = "", light = false }) {
   }
 
   return (
-    <div ref={containerRef} style={{ position: "relative", display: "inline-block" }} onMouseMove={handleMouseMove} onMouseLeave={() => setHovered(null)}>
+    <div ref={containerRef} style={{ position: "relative", display: "inline-block", filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.1))" }} onMouseMove={handleMouseMove} onMouseLeave={() => setHovered(null)}>
       <svg width={size} height={size}>
         {paths.map((a, i) => (
           <path key={i} d={a.d} fill={a.color}
-            opacity={hovered && hovered !== a ? 0.65 : 1}
-            stroke={light ? "rgba(255,255,255,0.2)" : "white"}
-            strokeWidth={2}
-            style={{ cursor: "pointer", transition: "opacity 0.12s" }}
+            opacity={hovered && hovered !== a ? 0.55 : 1}
+            stroke={light ? "rgba(255,255,255,0.35)" : "white"}
+            strokeWidth={hovered === a ? 3 : 2}
+            strokeLinejoin="round"
+            style={{ cursor: "pointer", transition: "opacity 0.15s, stroke-width 0.15s", filter: hovered === a ? "brightness(1.08)" : "none" }}
             onMouseEnter={() => setHovered(a)}
           />
         ))}
@@ -378,8 +379,8 @@ function HistoryView({ member, onBack }) {
     const timeSlices = (selectedWeek.time || []).map((t, i) => ({ label: t.label, value: parseFloat(t.value) || 0, color: SWATCHES[i % SWATCHES.length], pct: t.value })).filter(s => s.value > 0);
     const totalPct = (selectedWeek.time || []).reduce((s, t) => s + (parseFloat(t.value) || 0), 0);
     return (
-      <div style={{ minHeight: "100vh", background: P.gray50, padding: "40px 32px", fontFamily: "'DM Sans', sans-serif" }}>
-        <div style={{ maxWidth: 680, margin: "0 auto" }}>
+      <div style={{ minHeight: "100vh", background: P.gray50, padding: "40px 40px", fontFamily: "'DM Sans', sans-serif" }}>
+        <div style={{ maxWidth: 780, margin: "0 auto" }}>
           <button onClick={() => setSelectedWeek(null)} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: P.gray400, fontSize: 13, cursor: "pointer", fontWeight: 700, marginBottom: 24, fontFamily: "inherit" }}><ArrowLeft size={16} />Back to History</button>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
             <Avatar name={member.user_name} size={44} />
@@ -434,8 +435,8 @@ function HistoryView({ member, onBack }) {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: P.gray50, padding: "40px 32px", fontFamily: "'DM Sans', sans-serif" }}>
-      <div style={{ maxWidth: 680, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: P.gray50, padding: "40px 40px", fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ maxWidth: 780, margin: "0 auto" }}>
         <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: P.gray400, fontSize: 13, cursor: "pointer", fontWeight: 700, marginBottom: 24, fontFamily: "inherit" }}><ArrowLeft size={16} />Back</button>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
           <Avatar name={member.user_name} size={44} />
@@ -554,8 +555,8 @@ function PersonView({ member, isOwnProfile, onBack, members, weekDataMap, onPres
   const memberIndex = members ? members.findIndex(m => m.id === member.id) : 0;
 
   return (
-    <div style={{ minHeight: "100vh", background: P.gray50, padding: "40px 32px", fontFamily: "'DM Sans', sans-serif" }}>
-      <div style={{ maxWidth: 680, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: P.gray50, padding: "40px 40px", fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ maxWidth: 780, margin: "0 auto" }}>
         <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: P.gray400, fontSize: 13, cursor: "pointer", fontWeight: 700, marginBottom: 24, fontFamily: "inherit" }}><ArrowLeft size={16} />Back</button>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -619,7 +620,7 @@ function PersonView({ member, isOwnProfile, onBack, members, weekDataMap, onPres
               </div>
               {timeSlices.length > 0 && (
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-                  <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: P.gray100 }] : [])]} size={200} label={`${totalPct.toFixed(0)}%\nallocated`} />
+                  <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: P.gray100 }] : [])]} size={240} label={`${totalPct.toFixed(0)}%\nallocated`} />
                 </div>
               )}
               {!weekData.time.length && <p style={{ fontSize: 13, color: P.gray400, marginBottom: 12 }}>{isOwnProfile ? "No time breakdown yet." : "No time data entered."}</p>}
@@ -672,8 +673,8 @@ function TeamHistoryView({ members, onBack, onSelectMember }) {
   }));
 
   return (
-    <div style={{ minHeight: "100vh", background: P.gray50, padding: "40px 32px", fontFamily: "'DM Sans', sans-serif" }}>
-      <div style={{ maxWidth: 680, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: P.gray50, padding: "40px 40px", fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ maxWidth: 780, margin: "0 auto" }}>
         <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: P.gray400, fontSize: 13, cursor: "pointer", fontWeight: 700, marginBottom: 24, fontFamily: "inherit" }}><ArrowLeft size={16} />Back</button>
         <p style={{ fontWeight: 900, fontSize: 22, color: P.gray700, marginBottom: 8 }}>Team History</p>
         <p style={{ fontSize: 13, color: P.gray400, marginBottom: 24 }}>Tap a team member to see their history across all weeks.</p>
@@ -1137,8 +1138,8 @@ export default function TeamApp() {
   if (showAnalyst) return <AnalystPanel members={members} onClose={() => setShowAnalyst(false)} />;
 
   if (showTeamNotes) return (
-    <div style={{ minHeight: "100vh", background: P.gray50, padding: "40px 32px", fontFamily: "'DM Sans', sans-serif" }}>
-      <div style={{ maxWidth: 680, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: P.gray50, padding: "40px 40px", fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ maxWidth: 780, margin: "0 auto" }}>
         <button onClick={() => setShowTeamNotes(false)} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: P.gray400, fontSize: 13, cursor: "pointer", fontWeight: 700, marginBottom: 24, fontFamily: "inherit" }}><ArrowLeft size={16} />Back</button>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
           <div style={{ width: 48, height: 48, borderRadius: "50%", background: P.redLight, display: "flex", alignItems: "center", justifyContent: "center" }}><MessageSquare size={20} color={P.red} /></div>
