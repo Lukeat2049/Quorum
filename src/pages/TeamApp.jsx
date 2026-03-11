@@ -6,7 +6,7 @@ import {
   Shuffle, Users, ChevronDown, ChevronUp, Plus, X, ArrowLeft,
   BarChart2, Clock, FileText, MessageSquare, Play, Pause, RefreshCw,
   StickyNote, PieChart, Maximize2, Minimize2, ChevronLeft, ChevronRight,
-  Copy, Check, Settings, LogOut, Crown, History
+  Copy, Check, Settings, LogOut, Crown, History, Sparkles, TrendingUp
 } from "lucide-react";
 
 const P = {
@@ -697,6 +697,156 @@ function TeamHistoryView({ members, onBack, onSelectMember }) {
   );
 }
 
+// ── AI Analyst ────────────────────────────────────────────────────────────────
+function AnalystPanel({ members, onClose }) {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [allData, setAllData] = useState("");
+  const chatEndRef = useRef(null);
+
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
+
+  useEffect(() => {
+    async function loadHistory() {
+      const blocks = [];
+      for (const m of members) {
+        const { data } = await supabase.from("member_week_data").select("*").eq("member_id", m.id).order("week_key", { ascending: false }).limit(52);
+        if (data?.length) {
+          const weeks = data.map(w => {
+            const parts = [`Week ${w.week_key}`];
+            if (w.metrics?.length) parts.push(`Metrics: ${w.metrics.map(x => `${x.label}=${x.value}`).join(", ")}`);
+            if (w.time?.length) parts.push(`Time: ${w.time.map(x => `${x.label}=${x.value}%`).join(", ")}`);
+            if (w.notes?.trim()) parts.push(`Notes: ${w.notes.trim().slice(0, 100)}`);
+            return parts.join(" | ");
+          }).join("\n");
+          blocks.push(`### ${m.user_name}\n${weeks}`);
+        }
+      }
+      const block = blocks.join("\n\n");
+      setAllData(block);
+      setHistoryLoaded(true);
+    }
+    loadHistory();
+  }, []);
+
+  async function sendMessage() {
+    if (!input.trim() || loading || !historyLoaded) return;
+    const userMsg = input.trim();
+    setInput("");
+    const newMessages = [...messages, { role: "user", content: userMsg }];
+    setMessages(newMessages);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/analyst", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: newMessages, allData })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setMessages([...newMessages, { role: "assistant", content: data.answer }]);
+    } catch(e) {
+      setMessages([...newMessages, { role: "assistant", content: "Something went wrong. Try again." }]);
+    }
+    setLoading(false);
+  }
+
+  const suggestions = [
+    "Who has been most consistent over the past month?",
+    "What's taking up the most time across the team?",
+    "Is anyone's workload increasing significantly?",
+    "Summarize trends from the last 4 weeks",
+  ];
+
+  return (
+    <div style={{ minHeight: "100vh", background: P.gray50, fontFamily: "'DM Sans', sans-serif", display: "flex", flexDirection: "column" }}>
+      {/* Header */}
+      <div style={{ background: P.white, borderBottom: `1px solid ${P.gray100}`, padding: "16px 32px" }}>
+        <div style={{ maxWidth: 780, margin: "0 auto", display: "flex", alignItems: "center", gap: 12 }}>
+          <button onClick={onClose} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: P.gray400, fontSize: 13, cursor: "pointer", fontWeight: 700, fontFamily: "inherit" }}><ArrowLeft size={16} />Back</button>
+          <div style={{ width: 1, height: 20, background: P.gray200 }} />
+          <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center" }}><Sparkles size={16} color="white" /></div>
+          <div>
+            <p style={{ fontWeight: 900, fontSize: 16, color: P.gray700, margin: 0 }}>AI Analyst</p>
+            <p style={{ fontSize: 11, color: P.gray400, margin: 0 }}>{historyLoaded ? `${members.length} members · up to 52 weeks of data loaded` : "Loading team data..."}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Chat area */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "24px 32px" }}>
+        <div style={{ maxWidth: 780, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
+          {messages.length === 0 && !loading && (
+            <div style={{ textAlign: "center", padding: "40px 0" }}>
+              <div style={{ width: 64, height: 64, borderRadius: "50%", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}><Sparkles size={28} color="white" /></div>
+              <p style={{ fontWeight: 900, fontSize: 18, color: P.gray700, marginBottom: 8 }}>Ask me anything about your team</p>
+              <p style={{ fontSize: 13, color: P.gray400, marginBottom: 28 }}>{historyLoaded ? "I have access to your full team history." : "Loading team data, just a moment..."}</p>
+              {historyLoaded && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 480, margin: "0 auto" }}>
+                  {suggestions.map((s, i) => (
+                    <button key={i} onClick={() => setInput(s)}
+                      style={{ padding: "12px 18px", borderRadius: 12, border: `1.5px solid ${P.gray200}`, background: P.white, color: P.gray700, fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {messages.map((msg, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
+              {msg.role === "assistant" && (
+                <div style={{ display: "flex", gap: 10, maxWidth: "90%" }}>
+                  <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}><Sparkles size={14} color="white" /></div>
+                  <div style={{ ...card, padding: 20 }}>
+                    <p style={{ fontSize: 14, color: P.gray700, lineHeight: 1.85, whiteSpace: "pre-wrap", margin: 0 }}>{msg.content}</p>
+                  </div>
+                </div>
+              )}
+              {msg.role === "user" && (
+                <div style={{ background: "#6366f1", color: "white", borderRadius: "18px 18px 4px 18px", padding: "12px 18px", fontSize: 14, fontWeight: 600, maxWidth: "70%", lineHeight: 1.5 }}>
+                  {msg.content}
+                </div>
+              )}
+            </div>
+          ))}
+          {loading && (
+            <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center" }}><Sparkles size={14} color="white" /></div>
+              <div style={{ ...card, padding: "16px 20px", display: "flex", gap: 6, alignItems: "center" }}>
+                {[0,1,2].map(i => <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#6366f1", animation: `bounce 1s ${i*0.15}s infinite` }} />)}
+                <style>{`@keyframes bounce{0%,80%,100%{transform:scale(0.6);opacity:0.4}40%{transform:scale(1);opacity:1}}`}</style>
+              </div>
+            </div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
+      </div>
+
+      {/* Input */}
+      <div style={{ background: P.white, borderTop: `1px solid ${P.gray100}`, padding: "16px 32px" }}>
+        <div style={{ maxWidth: 780, margin: "0 auto", display: "flex", gap: 10 }}>
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
+            placeholder={historyLoaded ? "Ask anything about your team data..." : "Loading data..."}
+            disabled={!historyLoaded}
+            style={{ flex: 1, padding: "12px 18px", border: `1.5px solid ${P.gray200}`, borderRadius: 24, fontSize: 14, outline: "none", fontFamily: "inherit", color: P.gray700, background: P.gray50 }}
+          />
+          <button onClick={sendMessage} disabled={!input.trim() || loading || !historyLoaded}
+            style={{ padding: "12px 20px", borderRadius: 24, border: "none", background: input.trim() && !loading && historyLoaded ? "#6366f1" : P.gray200, color: "white", fontWeight: 800, fontSize: 14, cursor: input.trim() && !loading && historyLoaded ? "pointer" : "default", fontFamily: "inherit" }}>
+            Ask
+          </button>
+        </div>
+        <p style={{ textAlign: "center", fontSize: 11, color: P.gray400, marginTop: 8 }}>Press Enter to ask · Powered by Groq AI</p>
+      </div>
+    </div>
+  );
+}
+
 // ── AI Summary ────────────────────────────────────────────────────────────────
 function SummaryPanel({ members, onClose }) {
   const weekLabel = getWeekLabel();
@@ -874,6 +1024,7 @@ export default function TeamApp() {
   const [order, setOrder] = useState([]);
   const [selectedMember, setSelectedMember] = useState(null);
   const [showSummary, setShowSummary] = useState(false);
+  const [showAnalyst, setShowAnalyst] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -971,6 +1122,7 @@ export default function TeamApp() {
   }
 
   if (showSummary) return <SummaryPanel members={members} onClose={() => setShowSummary(false)} />;
+  if (showAnalyst) return <AnalystPanel members={members} onClose={() => setShowAnalyst(false)} />;
 
   if (showTeamNotes) return (
     <div style={{ minHeight: "100vh", background: P.gray50, padding: "40px 32px", fontFamily: "'DM Sans', sans-serif" }}>
@@ -1125,9 +1277,14 @@ export default function TeamApp() {
                     style={{ padding: "12px 16px", border: `1.5px solid ${P.gray200}`, borderRadius: 12, fontSize: 14, outline: "none", background: P.white, color: P.gray700, width: 110, fontFamily: "inherit" }} />
                 </div>
                 <div style={{ paddingTop: 16, borderTop: `1px solid ${P.redMid}` }}>
-                  <button onClick={() => setShowSummary(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: 16, borderRadius: 14, border: "none", background: P.red, color: "white", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
-                    <FileText size={16} />Generate Executive Summary
-                  </button>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <button onClick={() => setShowSummary(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: 16, borderRadius: 14, border: "none", background: P.red, color: "white", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+                      <FileText size={16} />Generate Executive Summary
+                    </button>
+                    <button onClick={() => setShowAnalyst(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: 16, borderRadius: 14, border: "none", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", color: "white", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+                      <Sparkles size={16} />Ask AI Analyst
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
