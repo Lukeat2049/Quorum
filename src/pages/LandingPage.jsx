@@ -51,21 +51,21 @@ export default function LandingPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: P.white, fontFamily: "'DM Sans', sans-serif", overflowX: "hidden" }}>
-      <style>{`
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        .hero-tag { animation: fadeUp 0.5s ease 0.1s both; }
-        .hero-h1 { animation: fadeUp 0.6s ease 0.2s both; }
-        .hero-p { animation: fadeUp 0.6s ease 0.3s both; }
-        .hero-cta { animation: fadeUp 0.6s ease 0.4s both; }
-        .hero-sub { animation: fadeUp 0.6s ease 0.5s both; }
-        .feature-card { transition: all 0.2s ease; }
-        .feature-card:hover { border-color: #ffccd2 !important; transform: translateY(-3px); box-shadow: 0 12px 32px rgba(230,0,35,0.09) !important; }
-        .faq-item summary { list-style: none; cursor: pointer; }
-        .faq-item summary::-webkit-details-marker { display: none; }
-        .faq-item[open] summary { color: #e60023; }
-        .step-num { background: linear-gradient(135deg, #e60023, #ff4d6d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-      `}</style>
+      <style>{[
+        "@keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }",
+        "@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }",
+        ".hero-tag { animation: fadeUp 0.5s ease 0.1s both; }",
+        ".hero-h1 { animation: fadeUp 0.6s ease 0.2s both; }",
+        ".hero-p { animation: fadeUp 0.6s ease 0.3s both; }",
+        ".hero-cta { animation: fadeUp 0.6s ease 0.4s both; }",
+        ".hero-sub { animation: fadeUp 0.6s ease 0.5s both; }",
+        ".feature-card { transition: all 0.2s ease; }",
+        ".feature-card:hover { border-color: #ffccd2 !important; transform: translateY(-3px); box-shadow: 0 12px 32px rgba(230,0,35,0.09) !important; }",
+        ".faq-item summary { list-style: none; cursor: pointer; }",
+        ".faq-item summary::-webkit-details-marker { display: none; }",
+        ".faq-item[open] summary { color: #e60023; }",
+        ".step-num { background: linear-gradient(135deg, #e60023, #ff4d6d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }",
+      ].join(" ")}</style>
 
       {/* Nav */}
       <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(255,255,255,0.92)", backdropFilter: "blur(16px)", borderBottom: `1px solid ${P.gray100}`, padding: "0 32px" }}>
@@ -226,7 +226,7 @@ export default function LandingPage() {
       </div>
 
       {/* Footer */}
-      <div style={{ borderTop: `1px solid ${P.gray100}`, padding: "32px 32px" }}>
+      <div style={{ borderTop: "1px solid " + P.gray100, padding: "32px 32px" }}>
         <div style={{ maxWidth: 1080, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
           <Logo size={26} />
           <p style={{ fontSize: 12, color: P.gray400, fontWeight: 500 }}>© 2026 Quorum · Before, during, and after the standup.</p>
