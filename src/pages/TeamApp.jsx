@@ -715,7 +715,19 @@ function AnalystPanel({ members, onClose }) {
         const { data } = await supabase.from("member_week_data").select("*").eq("member_id", m.id).order("week_key", { ascending: false }).limit(52);
         if (data?.length) {
           const weeks = data.map(w => {
-            const parts = [`Week ${w.week_key}`];
+            // Convert week_key (e.g. 2026-W11) to date range
+            const [year, wk] = w.week_key.split("-W");
+            const weekNum = parseInt(wk);
+            const jan4 = new Date(parseInt(year), 0, 4);
+            const startOfW1 = new Date(jan4);
+            startOfW1.setDate(jan4.getDate() - jan4.getDay() + 1);
+            const weekStart = new Date(startOfW1);
+            weekStart.setDate(startOfW1.getDate() + (weekNum - 1) * 7);
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 4);
+            const fmt = d => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+            const weekLabel = `${fmt(weekStart)}-${fmt(weekEnd)} ${year}`;
+            const parts = [`Week of ${weekLabel}`];
             if (w.metrics?.length) parts.push(`Metrics: ${w.metrics.map(x => `${x.label}=${x.value}`).join(", ")}`);
             if (w.time?.length) parts.push(`Time: ${w.time.map(x => `${x.label}=${x.value}%`).join(", ")}`);
             if (w.notes?.trim()) parts.push(`Notes: ${w.notes.trim().slice(0, 100)}`);
