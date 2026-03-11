@@ -1,3 +1,4 @@
+import { GripHorizontal } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useUser, UserButton } from "@clerk/clerk-react";
