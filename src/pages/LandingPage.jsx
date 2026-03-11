@@ -190,7 +190,7 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* CTA */
+      {/* CTA */}
       <div style={{ margin: "0 24px 80px", borderRadius: 32, background: "linear-gradient(135deg, #c8001e 0%, #e60023 60%, #ff2d4a 100%)", padding: "80px 24px", textAlign: "center", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -60, right: -60, width: 300, height: 300, borderRadius: "50%", background: "rgba(255,255,255,0.05)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: -80, left: -40, width: 350, height: 350, borderRadius: "50%", background: "rgba(0,0,0,0.08)", pointerEvents: "none" }} />
