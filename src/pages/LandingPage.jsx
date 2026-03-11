@@ -54,7 +54,7 @@ export default function LandingPage() {
 
 
       {/* Nav */}
-      <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(255,255,255,0.92)", backdropFilter: "blur(16px)", borderBottom: `1px solid ${P.gray100}`, padding: "0 32px" }}>
+      <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(255,255,255,0.92)", backdropFilter: "blur(16px)", borderBottom: "1px solid #f0f0f0", padding: "0 32px" }}>
         <div style={{ maxWidth: 1080, margin: "0 auto", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Logo size={32} />
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -76,7 +76,7 @@ export default function LandingPage() {
         <div style={{ position: "absolute", top: 40, left: "8%", width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(67,97,238,0.05) 0%, transparent 70%)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", top: 60, right: "6%", width: 250, height: 250, borderRadius: "50%", background: "radial-gradient(circle, rgba(230,0,35,0.04) 0%, transparent 70%)", pointerEvents: "none" }} />
         <div style={{ maxWidth: 780, margin: "0 auto", position: "relative" }}>
-          <div className="hero-tag" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "linear-gradient(135deg, #f0f4ff, #ffeef0)", border: `1px solid ${P.redMid}`, borderRadius: 24, padding: "7px 16px", marginBottom: 36 }}>
+          <div className="hero-tag" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "linear-gradient(135deg, #f0f4ff, #ffeef0)", border: "1px solid #ffb3bb", borderRadius: 24, padding: "7px 16px", marginBottom: 36 }}>
             <div style={{ width: 7, height: 7, borderRadius: "50%", background: P.red, animation: "pulse 2s infinite" }} />
             <span style={{ fontSize: 12, fontWeight: 800, color: P.red, letterSpacing: 1 }}>AI-POWERED TEAM STANDUPS</span>
           </div>
@@ -90,14 +90,14 @@ export default function LandingPage() {
             <button onClick={() => navigate("/sign-up")} style={{ display: "flex", alignItems: "center", gap: 8, background: P.red, color: "white", border: "none", borderRadius: 28, padding: "17px 36px", fontWeight: 800, fontSize: 16, cursor: "pointer", boxShadow: "0 8px 28px rgba(230,0,35,0.32)", fontFamily: "inherit" }}>
               Start for free <ArrowRight size={18} />
             </button>
-            <button onClick={() => navigate("/sign-in")} style={{ background: P.white, color: P.gray700, border: `2px solid ${P.gray200}`, borderRadius: 28, padding: "17px 32px", fontWeight: 700, fontSize: 16, cursor: "pointer", fontFamily: "inherit" }}>Sign in</button>
+            <button onClick={() => navigate("/sign-in")} style={{ background: P.white, color: P.gray700, border: "2px solid #e8e8e8", borderRadius: 28, padding: "17px 32px", fontWeight: 700, fontSize: 16, cursor: "pointer", fontFamily: "inherit" }}>Sign in</button>
           </div>
           <p className="hero-sub" style={{ fontSize: 12, color: P.gray400, marginTop: 18, fontWeight: 500 }}>Free to start · No credit card required · Set up in 5 minutes</p>
         </div>
       </div>
 
       {/* Stats strip */}
-      <div style={{ background: P.gray50, borderTop: `1px solid ${P.gray100}`, borderBottom: `1px solid ${P.gray100}`, padding: "20px 24px" }}>
+      <div style={{ background: P.gray50, borderTop: "1px solid #f0f0f0", borderBottom: "1px solid #f0f0f0", padding: "20px 24px" }}>
         <div style={{ maxWidth: 860, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: 48, flexWrap: "wrap" }}>
           {[{ val: "2 min", label: "avg setup time" }, { val: "52 weeks", label: "of AI memory" }, { val: "1 click", label: "executive summary" }, { val: "100%", label: "free to start" }].map((s, i) => (
             <div key={i} style={{ textAlign: "center" }}>
@@ -114,7 +114,7 @@ export default function LandingPage() {
         <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(28px, 4vw, 44px)", textAlign: "center", color: P.gray700, marginBottom: 72, fontWeight: 400, letterSpacing: -0.5 }}>From setup to summary in one meeting</h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 0 }}>
           {steps.map((s, i) => (
-            <div key={i} style={{ padding: "0 32px", borderLeft: i > 0 ? `1px dashed ${P.gray200}` : "none" }}>
+            <div key={i} style={{ padding: "0 32px", borderLeft: i > 0 ? "1px dashed #e8e8e8" : "none" }}>
               <div className="step-num" style={{ fontSize: 52, fontWeight: 900, letterSpacing: -2, lineHeight: 1, marginBottom: 16, fontFamily: "'DM Serif Display', serif" }}>{s.num}</div>
               <h3 style={{ fontSize: 17, fontWeight: 800, color: P.gray700, marginBottom: 10 }}>{s.title}</h3>
               <p style={{ fontSize: 14, color: P.gray400, lineHeight: 1.7 }}>{s.body}</p>
@@ -124,14 +124,14 @@ export default function LandingPage() {
       </div>
 
       {/* Features grid */}
-      <div style={{ background: P.gray50, borderTop: `1px solid ${P.gray100}`, borderBottom: `1px solid ${P.gray100}`, padding: "96px 24px" }}>
+      <div style={{ background: P.gray50, borderTop: "1px solid #f0f0f0", borderBottom: "1px solid #f0f0f0", padding: "96px 24px" }}>
         <div style={{ maxWidth: 1080, margin: "0 auto" }}>
           <p style={{ fontSize: 11, fontWeight: 800, color: P.red, letterSpacing: 3, textAlign: "center", marginBottom: 14 }}>EVERYTHING YOU NEED</p>
           <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(28px, 4vw, 44px)", textAlign: "center", color: P.gray700, marginBottom: 16, fontWeight: 400, letterSpacing: -0.5 }}>Before, during, and after the standup</h2>
           <p style={{ fontSize: 16, color: P.gray400, textAlign: "center", maxWidth: 480, margin: "0 auto 64px" }}>Every feature your team needs, in one focused tool.</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
             {features.map((f, i) => (
-              <div key={i} className="feature-card" style={{ background: P.white, borderRadius: 20, padding: "26px 28px", border: `1.5px solid ${P.gray100}` }}>
+              <div key={i} className="feature-card" style={{ background: P.white, borderRadius: 20, padding: "26px 28px", border: "1.5px solid #f0f0f0" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
                   <div style={{ width: 44, height: 44, borderRadius: 12, background: tagColors[f.tag].bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <f.icon size={20} color={tagColors[f.tag].color} />
@@ -191,7 +191,7 @@ export default function LandingPage() {
       </div>
 
       {/* CTA */
-      <div style={{ margin: "0 24px 80px", borderRadius: 32, background: `linear-gradient(135deg, #c8001e 0%, #e60023 60%, #ff2d4a 100%)`, padding: "80px 24px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+      <div style={{ margin: "0 24px 80px", borderRadius: 32, background: "linear-gradient(135deg, #c8001e 0%, #e60023 60%, #ff2d4a 100%)", padding: "80px 24px", textAlign: "center", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -60, right: -60, width: 300, height: 300, borderRadius: "50%", background: "rgba(255,255,255,0.05)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: -80, left: -40, width: 350, height: 350, borderRadius: "50%", background: "rgba(0,0,0,0.08)", pointerEvents: "none" }} />
         <div style={{ position: "relative" }}>
@@ -212,7 +212,7 @@ export default function LandingPage() {
       </div>
 
       {/* Footer */}
-      <div style={{ borderTop: "1px solid " + P.gray100, padding: "32px 32px" }}>
+      <div style={{ borderTop: "1px solid #f0f0f0", padding: "32px 32px" }}>
         <div style={{ maxWidth: 1080, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
           <Logo size={26} />
           <p style={{ fontSize: 12, color: P.gray400, fontWeight: 500 }}>© 2026 Quorum · Before, during, and after the standup.</p>
