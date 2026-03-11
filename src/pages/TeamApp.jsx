@@ -131,12 +131,10 @@ function DonutChart({ slices, size = 220, label = "", light = false }) {
 
 // ── Meeting Timer ─────────────────────────────────────────────────────────────
 function MeetingTimer({ duration, elapsed, setElapsed, running, setRunning }) {
-  const iv = useRef(null);
   const total = duration * 60, remaining = Math.max(0, total - elapsed);
   const pct = total > 0 ? Math.min((elapsed / total) * 100, 100) : 0;
   const isWarn = pct >= 75 && pct < 90, isDanger = pct >= 90, isOver = elapsed >= total && total > 0;
   const ringColor = isDanger ? "#e60023" : isWarn ? "#ff8c00" : "#00a86b";
-  useEffect(() => { if (running) { iv.current = setInterval(() => setElapsed(e => e + 1), 1000); } else clearInterval(iv.current); return () => clearInterval(iv.current); }, [running]);
   const r = 50, circ = 2 * Math.PI * r;
   return (
     <div style={{ ...card, padding: 24, marginBottom: 16, background: isDanger ? "#fff5f5" : isWarn ? "#fff8f0" : P.white }}>
@@ -800,6 +798,12 @@ export default function TeamApp() {
   const [weekDataMap, setWeekDataMap] = useState({});
   const [timerElapsed, setTimerElapsed] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
+  const timerIv = useRef(null);
+  useEffect(() => {
+    if (timerRunning) { timerIv.current = setInterval(() => setTimerElapsed(e => e + 1), 1000); }
+    else clearInterval(timerIv.current);
+    return () => clearInterval(timerIv.current);
+  }, [timerRunning]);
 
   useEffect(() => { if (user) loadTeam(); }, [teamId, user]);
 
@@ -1046,4 +1050,3 @@ export default function TeamApp() {
     </div>
   );
 }
-// pie-1773188810
