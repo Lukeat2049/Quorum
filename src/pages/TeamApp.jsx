@@ -701,13 +701,18 @@ function TeamHistoryView({ members, onBack, onSelectMember }) {
 function SummaryPanel({ members, onClose }) {
   const weekLabel = getWeekLabel();
   const weekKey = getWeekKey();
-  const [summary, setSummary] = useState("");
+  const [messages, setMessages] = useState([]); // {role, content}
+  const [currentSummary, setCurrentSummary] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
+  const [input, setInput] = useState("");
+  const [dataBlock, setDataBlock] = useState("");
+  const chatEndRef = useRef(null);
 
-  async function generate() {
-    setLoading(true); setSummary(""); setError("");
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
+
+  async function buildDataBlock() {
     const memberData = [];
     for (const m of members) {
       const { data } = await supabase.from("member_week_data").select("*").eq("member_id", m.id).eq("week_key", weekKey).single();
@@ -715,60 +720,144 @@ function SummaryPanel({ members, onClose }) {
         memberData.push({ name: m.user_name, ...data });
       }
     }
-    if (!memberData.length) { setError("No data entered this week yet."); setLoading(false); return; }
-    const dataBlock = memberData.map(m => {
+    if (!memberData.length) return null;
+    return memberData.map(m => {
       const parts = [];
       if (m.metrics?.length) parts.push(`Metrics:\n${m.metrics.map(x => `  - ${x.label}: ${x.value || "—"}`).join("\n")}`);
       if (m.time?.length) parts.push(`Time:\n${m.time.map(x => `  - ${x.label}: ${x.value}%`).join("\n")}`);
       if (m.notes?.trim()) parts.push(`Notes:\n  ${m.notes.trim()}`);
       return `### ${m.name}\n${parts.join("\n")}`;
     }).join("\n\n");
+  }
+
+  async function generate() {
+    setLoading(true); setError(""); setMessages([]); setCurrentSummary("");
+    const block = await buildDataBlock();
+    if (!block) { setError("No data entered this week yet."); setLoading(false); return; }
+    setDataBlock(block);
     try {
-      const res = await fetch("/api/summary", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ weekLabel, dataBlock }) });
+      const res = await fetch("/api/summary", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ weekLabel, dataBlock: block, messages: [] }) });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      setSummary(data.summary);
+      setCurrentSummary(data.summary);
+      setMessages([{ role: "assistant", content: data.summary }]);
     } catch(e) { setError("Something went wrong. Try again."); }
     setLoading(false);
   }
 
-  function copy() { navigator.clipboard.writeText(summary).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }); }
+  async function sendMessage() {
+    if (!input.trim() || loading) return;
+    const userMsg = input.trim();
+    setInput("");
+    const newMessages = [...messages, { role: "user", content: userMsg }];
+    setMessages(newMessages);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/summary", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ weekLabel, dataBlock, messages: newMessages }) });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setCurrentSummary(data.summary);
+      setMessages([...newMessages, { role: "assistant", content: data.summary }]);
+    } catch(e) { setMessages([...newMessages, { role: "assistant", content: "Something went wrong. Try again." }]); }
+    setLoading(false);
+  }
+
+  function copy() { navigator.clipboard.writeText(currentSummary).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }); }
   useEffect(() => { generate(); }, []);
 
   return (
-    <div style={{ minHeight: "100vh", background: P.gray50, padding: "40px 32px", fontFamily: "'DM Sans', sans-serif" }}>
-      <div style={{ maxWidth: 680, margin: "0 auto" }}>
-        <button onClick={onClose} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: P.gray400, fontSize: 13, cursor: "pointer", fontWeight: 700, marginBottom: 24, fontFamily: "inherit" }}><ArrowLeft size={16} />Back</button>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-          <div style={{ width: 48, height: 48, borderRadius: "50%", background: P.red, display: "flex", alignItems: "center", justifyContent: "center" }}><FileText size={22} color="white" /></div>
-          <div><p style={{ fontWeight: 900, fontSize: 20, color: P.gray700, margin: 0 }}>Executive Summary</p><p style={{ fontSize: 12, color: P.gray400, margin: 0 }}>AI-generated · {weekLabel}</p></div>
+    <div style={{ minHeight: "100vh", background: P.gray50, fontFamily: "'DM Sans', sans-serif", display: "flex", flexDirection: "column" }}>
+      {/* Header */}
+      <div style={{ background: P.white, borderBottom: `1px solid ${P.gray100}`, padding: "16px 32px" }}>
+        <div style={{ maxWidth: 780, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button onClick={onClose} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: P.gray400, fontSize: 13, cursor: "pointer", fontWeight: 700, fontFamily: "inherit" }}><ArrowLeft size={16} />Back</button>
+            <div style={{ width: 1, height: 20, background: P.gray200 }} />
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: P.red, display: "flex", alignItems: "center", justifyContent: "center" }}><FileText size={16} color="white" /></div>
+            <div>
+              <p style={{ fontWeight: 900, fontSize: 16, color: P.gray700, margin: 0 }}>Executive Summary</p>
+              <p style={{ fontSize: 11, color: P.gray400, margin: 0 }}>AI-generated · {weekLabel}</p>
+            </div>
+          </div>
+          {currentSummary && (
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={copy} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 20, border: "none", background: copied ? "#00a86b" : P.red, color: "white", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+                {copied ? <><Check size={13} />Copied!</> : <><Copy size={13} />Copy</>}
+              </button>
+              <button onClick={generate} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 20, border: `2px solid ${P.redMid}`, background: P.redLight, color: P.red, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+                <RefreshCw size={13} />Restart
+              </button>
+            </div>
+          )}
         </div>
-        <div style={{ ...card, padding: 28, marginBottom: 16 }}>
-          {loading && <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "40px 0", gap: 16 }}>
-            <div style={{ width: 40, height: 40, borderRadius: "50%", border: `3px solid ${P.redMid}`, borderTopColor: P.red, animation: "spin 0.8s linear infinite" }} />
-            <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
-            <p style={{ fontSize: 13, color: P.gray400, fontWeight: 600 }}>Generating summary...</p>
-          </div>}
-          {error && !loading && <div style={{ textAlign: "center", padding: "32px 0" }}>
-            <p style={{ fontSize: 13, color: P.red, fontWeight: 600, marginBottom: 16 }}>{error}</p>
-            <button onClick={generate} style={{ background: P.red, color: "white", border: "none", borderRadius: 20, padding: "10px 24px", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Try Again</button>
-          </div>}
-          {summary && !loading && <>
-            <p style={{ fontSize: 10, fontWeight: 800, color: P.gray400, letterSpacing: 2, marginBottom: 16 }}>READY FOR SENIOR MANAGEMENT</p>
-            <p style={{ fontSize: 14, color: P.gray700, lineHeight: 1.85, whiteSpace: "pre-wrap", margin: 0 }}>{summary}</p>
-          </>}
+      </div>
+
+      {/* Chat area */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "24px 32px" }}>
+        <div style={{ maxWidth: 780, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
+          {messages.length === 0 && !loading && !error && (
+            <div style={{ textAlign: "center", padding: "60px 0", color: P.gray400 }}>
+              <div style={{ width: 48, height: 48, borderRadius: "50%", border: `3px solid ${P.redMid}`, borderTopColor: P.red, animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+              <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
+              <p style={{ fontWeight: 600, fontSize: 13 }}>Generating summary...</p>
+            </div>
+          )}
+          {error && (
+            <div style={{ textAlign: "center", padding: "40px 0" }}>
+              <p style={{ fontSize: 13, color: P.red, fontWeight: 600, marginBottom: 16 }}>{error}</p>
+              <button onClick={generate} style={{ background: P.red, color: "white", border: "none", borderRadius: 20, padding: "10px 24px", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Try Again</button>
+            </div>
+          )}
+          {messages.map((msg, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
+              {msg.role === "assistant" && (
+                <div style={{ display: "flex", gap: 10, maxWidth: "90%" }}>
+                  <div style={{ width: 32, height: 32, borderRadius: "50%", background: P.red, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}><FileText size={14} color="white" /></div>
+                  <div style={{ ...card, padding: 20 }}>
+                    {i === 0 && <p style={{ fontSize: 10, fontWeight: 800, color: P.gray400, letterSpacing: 2, marginBottom: 12, margin: "0 0 12px" }}>READY FOR SENIOR MANAGEMENT</p>}
+                    <p style={{ fontSize: 14, color: P.gray700, lineHeight: 1.85, whiteSpace: "pre-wrap", margin: 0 }}>{msg.content}</p>
+                  </div>
+                </div>
+              )}
+              {msg.role === "user" && (
+                <div style={{ background: P.red, color: "white", borderRadius: "18px 18px 4px 18px", padding: "12px 18px", fontSize: 14, fontWeight: 600, maxWidth: "70%", lineHeight: 1.5 }}>
+                  {msg.content}
+                </div>
+              )}
+            </div>
+          ))}
+          {loading && messages.length > 0 && (
+            <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ width: 32, height: 32, borderRadius: "50%", background: P.red, display: "flex", alignItems: "center", justifyContent: "center" }}><FileText size={14} color="white" /></div>
+              <div style={{ ...card, padding: "16px 20px", display: "flex", gap: 6, alignItems: "center" }}>
+                {[0,1,2].map(i => <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: P.red, animation: `bounce 1s ${i*0.15}s infinite` }} />)}
+                <style>{`@keyframes bounce{0%,80%,100%{transform:scale(0.6);opacity:0.4}40%{transform:scale(1);opacity:1}}`}</style>
+              </div>
+            </div>
+          )}
+          <div ref={chatEndRef} />
         </div>
-        {summary && !loading && (
-          <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={copy} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 24, border: "none", background: copied ? "#00a86b" : P.red, color: "white", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
-              {copied ? <><Check size={16} />Copied!</> : <><Copy size={16} />Copy to Clipboard</>}
-            </button>
-            <button onClick={generate} style={{ padding: "13px 18px", borderRadius: 24, border: `2px solid ${P.redMid}`, background: P.redLight, color: P.red, fontWeight: 800, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" }}>
-              <RefreshCw size={14} />Regenerate
+      </div>
+
+      {/* Input bar */}
+      {(currentSummary || error) && (
+        <div style={{ background: P.white, borderTop: `1px solid ${P.gray100}`, padding: "16px 32px" }}>
+          <div style={{ maxWidth: 780, margin: "0 auto", display: "flex", gap: 10 }}>
+            <input
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
+              placeholder='Refine it... e.g. "make it shorter" or "focus more on metrics"'
+              style={{ flex: 1, padding: "12px 18px", border: `1.5px solid ${P.gray200}`, borderRadius: 24, fontSize: 14, outline: "none", fontFamily: "inherit", color: P.gray700, background: P.gray50 }}
+            />
+            <button onClick={sendMessage} disabled={!input.trim() || loading}
+              style={{ padding: "12px 20px", borderRadius: 24, border: "none", background: input.trim() && !loading ? P.red : P.gray200, color: "white", fontWeight: 800, fontSize: 14, cursor: input.trim() && !loading ? "pointer" : "default", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}>
+              Send
             </button>
           </div>
-        )}
-      </div>
+          <p style={{ textAlign: "center", fontSize: 11, color: P.gray400, marginTop: 8 }}>Press Enter to send · Ask AI to refine until it's perfect</p>
+        </div>
+      )}
     </div>
   );
 }
