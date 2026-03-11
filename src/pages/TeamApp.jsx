@@ -1224,21 +1224,21 @@ export default function TeamApp() {
 
   return (
     <div style={{ minHeight: "100vh", background: P.gray50, fontFamily: "'DM Sans', sans-serif" }}>
-      <style>{`
-        .quorum-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
-        .quorum-wrap { max-width: 1200px; margin: 0 auto; padding: 32px 40px; }
-        .quorum-nav-inner { max-width: 1200px; margin: 0 auto; height: 64px; display: flex; align-items: center; justify-content: space-between; }
-        .quorum-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
-        .quorum-actions { display: flex; gap: 10px; }
-        @media (max-width: 768px) {
-          .quorum-grid { grid-template-columns: 1fr; }
-          .quorum-wrap { padding: 20px 16px; }
-          .quorum-nav-inner { padding: 0 4px; }
-          .quorum-header { flex-direction: column; align-items: flex-start; gap: 12px; }
-          .quorum-actions { width: 100%; }
-          .quorum-actions button { flex: 1; justify-content: center; }
-        }
-      `}</style>
+      <style>{[
+        ".quorum-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }",
+        ".quorum-wrap { max-width: 1200px; margin: 0 auto; padding: 32px 40px; }",
+        ".quorum-nav-inner { max-width: 1200px; margin: 0 auto; height: 64px; display: flex; align-items: center; justify-content: space-between; }",
+        ".quorum-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }",
+        ".quorum-actions { display: flex; gap: 10px; }",
+        "@media (max-width: 768px) {",
+        "  .quorum-grid { grid-template-columns: 1fr; }",
+        "  .quorum-wrap { padding: 20px 16px; }",
+        "  .quorum-nav-inner { padding: 0 4px; }",
+        "  .quorum-header { flex-direction: column; align-items: flex-start; gap: 12px; }",
+        "  .quorum-actions { width: 100%; }",
+        "  .quorum-actions button { flex: 1; justify-content: center; }",
+        "}",
+      ].join(" ")}</style>
       <nav style={{ background: P.white, borderBottom: `1px solid ${P.gray100}`, padding: "0 32px", position: "sticky", top: 0, zIndex: 10 }}>
         <div className="quorum-nav-inner">
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
