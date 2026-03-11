@@ -19,7 +19,7 @@ function LoadingScreen() {
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#fafafa" }}>
       <div style={{ textAlign: "center" }}>
         <div style={{ width: 48, height: 48, borderRadius: "50%", border: "3px solid #ffccd2", borderTopColor: "#e60023", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <style>{"@keyframes spin { to { transform: rotate(360deg); } }"}</style>
         <p style={{ fontSize: 14, color: "#999", fontWeight: 600 }}>Loading Quorum...</p>
       </div>
     </div>

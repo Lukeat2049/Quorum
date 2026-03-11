@@ -474,7 +474,7 @@ function HistoryView({ member, onBack }) {
                 {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: 48 }}>
             <div style={{ width: 32, height: 32, borderRadius: "50%", border: `3px solid ${P.redMid}`, borderTopColor: P.red, animation: "spin 0.8s linear infinite" }} />
-            <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
+            <style>{"@keyframes spin{to{transform:rotate(360deg);}}"}</style>
           </div>
         ) : weeks.length === 0 ? (
           <div style={{ ...card, padding: 32, textAlign: "center" }}>
@@ -879,7 +879,7 @@ function AnalystPanel({ members, teamId, userId, onClose }) {
               <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center" }}><Sparkles size={14} color="white" /></div>
               <div style={{ ...card, padding: "16px 20px", display: "flex", gap: 6, alignItems: "center" }}>
                 {[0,1,2].map(i => <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#6366f1", animation: `bounce 1s ${i*0.15}s infinite` }} />)}
-                <style>{`@keyframes bounce{0%,80%,100%{transform:scale(0.6);opacity:0.4}40%{transform:scale(1);opacity:1}}`}</style>
+                <style>{"@keyframes bounce{0%,80%,100%{transform:scale(0.6);opacity:0.4}40%{transform:scale(1);opacity:1}}"}</style>
               </div>
             </div>
           )}
@@ -1010,7 +1010,7 @@ function SummaryPanel({ members, onClose }) {
           {messages.length === 0 && !loading && !error && (
             <div style={{ textAlign: "center", padding: "60px 0", color: P.gray400 }}>
               <div style={{ width: 48, height: 48, borderRadius: "50%", border: `3px solid ${P.redMid}`, borderTopColor: P.red, animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
-              <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
+              <style>{"@keyframes spin{to{transform:rotate(360deg);}}"}</style>
               <p style={{ fontWeight: 600, fontSize: 13 }}>Generating summary...</p>
             </div>
           )}
@@ -1043,7 +1043,7 @@ function SummaryPanel({ members, onClose }) {
               <div style={{ width: 32, height: 32, borderRadius: "50%", background: P.red, display: "flex", alignItems: "center", justifyContent: "center" }}><FileText size={14} color="white" /></div>
               <div style={{ ...card, padding: "16px 20px", display: "flex", gap: 6, alignItems: "center" }}>
                 {[0,1,2].map(i => <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: P.red, animation: `bounce 1s ${i*0.15}s infinite` }} />)}
-                <style>{`@keyframes bounce{0%,80%,100%{transform:scale(0.6);opacity:0.4}40%{transform:scale(1);opacity:1}}`}</style>
+                <style>{"@keyframes bounce{0%,80%,100%{transform:scale(0.6);opacity:0.4}40%{transform:scale(1);opacity:1}}"}</style>
               </div>
             </div>
           )}
@@ -1187,7 +1187,7 @@ export default function TeamApp() {
   if (loading) return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: P.gray50 }}>
       <div style={{ width: 36, height: 36, borderRadius: "50%", border: `3px solid ${P.redMid}`, borderTopColor: P.red, animation: "spin 0.8s linear infinite" }} />
-      <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
+      <style>{"@keyframes spin{to{transform:rotate(360deg);}}"}</style>
     </div>
   );
 
