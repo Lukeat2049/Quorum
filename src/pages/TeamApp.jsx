@@ -77,18 +77,28 @@ function DonutChart({ slices, size = 220, label = "", light = false }) {
   const [hovered, setHovered] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const containerRef = useRef(null);
-  const r = size * 0.31, cx = size / 2, cy = size / 2, stroke = size * 0.11;
   const total = slices.reduce((s, x) => s + x.value, 0);
   if (!total) return (
-    <div style={{ width: size, height: size, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ width: size - 40, height: size - 40, borderRadius: "50%", border: `${stroke}px solid ${light ? "rgba(255,255,255,0.1)" : P.gray100}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontSize: 12, color: light ? "rgba(255,255,255,0.4)" : P.gray400, fontWeight: 700 }}>No data</span>
-      </div>
+    <div style={{ width: size, height: size, borderRadius: "50%", background: light ? "rgba(255,255,255,0.1)" : P.gray100, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <span style={{ fontSize: 12, color: light ? "rgba(255,255,255,0.4)" : P.gray400, fontWeight: 700 }}>No data</span>
     </div>
   );
-  const circ = 2 * Math.PI * r;
-  let offset = 0;
-  const arcs = slices.map(s => { const dash = s.value / total * circ; const arc = { ...s, dash, gap: circ - dash, offset }; offset += dash; return arc; });
+  const cx = size / 2, cy = size / 2, r = size / 2 - 2;
+  let cum = 0;
+  const toXY = (pct) => {
+    const angle = pct * 2 * Math.PI - Math.PI / 2;
+    return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
+  };
+  const paths = slices.map(a => {
+    const pct = a.value / total;
+    const start = cum;
+    cum += pct;
+    const [x1, y1] = toXY(start);
+    const [x2, y2] = toXY(cum);
+    const large = pct > 0.5 ? 1 : 0;
+    const d = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`;
+    return { ...a, d, pct };
+  });
 
   function handleMouseMove(e) {
     if (!containerRef.current) return;
@@ -98,28 +108,17 @@ function DonutChart({ slices, size = 220, label = "", light = false }) {
 
   return (
     <div ref={containerRef} style={{ position: "relative", display: "inline-block" }} onMouseMove={handleMouseMove} onMouseLeave={() => setHovered(null)}>
-      <svg width={size} height={size} style={{ transform: "rotate(-90deg)", display: "block" }}>
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke={light ? "rgba(255,255,255,0.1)" : P.gray100} strokeWidth={stroke} />
-        {arcs.map((a, i) => (
-          <circle key={i} cx={cx} cy={cy} r={r} fill="none"
-            stroke={a.color}
-            strokeWidth={hovered === a ? stroke * 1.18 : stroke}
-            strokeDasharray={`${a.dash} ${a.gap}`}
-            strokeDashoffset={-a.offset}
-            strokeLinecap="butt"
-            style={{ cursor: "pointer", transition: "stroke-width 0.12s" }}
+      <svg width={size} height={size}>
+        {paths.map((a, i) => (
+          <path key={i} d={a.d} fill={a.color}
+            opacity={hovered && hovered !== a ? 0.65 : 1}
+            stroke={light ? "rgba(255,255,255,0.2)" : "white"}
+            strokeWidth={2}
+            style={{ cursor: "pointer", transition: "opacity 0.12s" }}
             onMouseEnter={() => setHovered(a)}
           />
         ))}
       </svg>
-      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
-        {hovered && (
-          <>
-            <span style={{ fontSize: size * 0.12, fontWeight: 900, color: light ? P.white : P.gray700, lineHeight: 1 }}>{Math.round(hovered.value / total * 100)}%</span>
-            <span style={{ fontSize: size * 0.065, color: light ? "rgba(255,255,255,0.65)" : P.gray400, fontWeight: 700, textAlign: "center", maxWidth: size * 0.45, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 3 }}>{hovered.label}</span>
-          </>
-        )}
-      </div>
       {hovered && (
         <div style={{ position: "absolute", left: mousePos.x + 14, top: mousePos.y - 40, background: light ? "rgba(255,255,255,0.95)" : P.gray700, color: light ? P.gray700 : P.white, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, pointerEvents: "none", whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,0.2)", zIndex: 99 }}>
           <span style={{ color: hovered.color, marginRight: 6 }}>●</span>{hovered.label} — {Math.round(hovered.value / total * 100)}%
@@ -301,7 +300,7 @@ function PresentMode({ members, initialMemberIndex, weekDataMap, onExit, duratio
             <p style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.5)", letterSpacing: 2, marginBottom: 12, textAlign: "center" }}>TIME BREAKDOWN</p>
             <h2 style={{ fontSize: 36, fontWeight: 900, color: "white", margin: "0 0 32px", textAlign: "center", letterSpacing: -1 }}>How I spent my time</h2>
             <div style={{ display: "flex", alignItems: "center", gap: 40, flexWrap: "wrap", justifyContent: "center" }}>
-              <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: "rgba(255,255,255,0.1)" }] : [])]} size={300} label="" light />
+              <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: "rgba(255,255,255,0.1)" }] : [])]} size={300} label={`${totalPct.toFixed(0)}%\nallocated`} light />
               <div style={{ display: "flex", flexDirection: "column", gap: 12, minWidth: 180 }}>
                 {timeSlices.map((t, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -622,7 +621,7 @@ function PersonView({ member, isOwnProfile, onBack, members, weekDataMap, onPres
               </div>
               {timeSlices.length > 0 && (
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-                  <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: P.gray100 }] : [])]} size={200} label="" />
+                  <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: P.gray100 }] : [])]} size={200} label={`${totalPct.toFixed(0)}%\nallocated`} />
                 </div>
               )}
               {!weekData.time.length && <p style={{ fontSize: 13, color: P.gray400, marginBottom: 12 }}>{isOwnProfile ? "No time breakdown yet." : "No time data entered."}</p>}
