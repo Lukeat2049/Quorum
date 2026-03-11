@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
-import { Shuffle, BarChart2, FileText, Clock, ArrowRight, Users, Zap } from "lucide-react";
+import { Shuffle, BarChart2, FileText, Clock, ArrowRight, Maximize2, History, MessageSquare, TrendingUp } from "lucide-react";
 
 const P = {
   red: "#e60023", redLight: "#ffeef0", redMid: "#ffccd2",
@@ -21,12 +21,14 @@ function Logo({ size = 38, light = false }) {
 }
 
 const features = [
-  { icon: Shuffle, title: "Smart Order", desc: "Randomize who goes first. Fair every time, no awkward silence deciding." },
-  { icon: BarChart2, title: "Weekly Metrics", desc: "Each team member logs what they shipped. Visual, trackable, comparable week over week." },
-  { icon: Clock, title: "Time Breakdown", desc: "See how everyone actually spent their time with interactive donut charts." },
-  { icon: FileText, title: "AI Executive Summary", desc: "One click turns your team's week into a board-ready summary for senior management." },
-  { icon: Users, title: "Team Roles", desc: "Admins control the meeting. Members own their own data. Everyone stays in their lane." },
-  { icon: Zap, title: "Present Mode", desc: "Full-screen presentation mode for each team member's standup update." },
+  { icon: TrendingUp, title: "AI Analyst", desc: "Ask questions about your team's performance across 52 weeks of history. Spots trends, flags changes, answers questions about any member's data." },
+  { icon: FileText, title: "AI Executive Summary", desc: "Generates a board-ready summary from your team's actual data. Refine it with chat — 'make it shorter', 'focus on revenue numbers'." },
+  { icon: BarChart2, title: "Weekly Metrics Tracking", desc: "Every team member logs their own numbers each week. Tracked and comparable week over week." },
+  { icon: Clock, title: "Time Breakdown Charts", desc: "Log how you split your time across projects. Visual pie charts show where the week went — with week-over-week change indicators." },
+  { icon: Maximize2, title: "Present Mode", desc: "Full-screen slide-style presentation for each team member's update. Built for screen sharing in remote standups." },
+  { icon: History, title: "2-Year History", desc: "Every member's data stored for up to 2 years. Drill into any past week for any person, or view the whole team's history at once." },
+  { icon: MessageSquare, title: "Meeting Timer & Team Notes", desc: "Built-in countdown timer keeps standups on track. Shared team notes for blockers, decisions, and action items." },
+  { icon: Shuffle, title: "Randomized Speaking Order", desc: "One click generates a fair random order. No awkward silence figuring out who goes first." },
 ];
 
 export default function LandingPage() {
@@ -119,7 +121,11 @@ export default function LandingPage() {
       {/* Footer */}
       <div style={{ textAlign: "center", padding: "24px", borderTop: `1px solid ${P.gray100}` }}>
         <Logo size={24} />
-        <p style={{ fontSize: 12, color: P.gray400, marginTop: 12, fontWeight: 500 }}>© 2025 Quorum · Before, during, and after.</p>
+        <p style={{ fontSize: 12, color: P.gray400, marginTop: 12, fontWeight: 500 }}>© 2026 Quorum · Before, during, and after.</p>
+        <div style={{ display: "flex", justifyContent: "center", gap: 24, marginTop: 8 }}>
+          <button onClick={() => navigate("/privacy")} style={{ fontSize: 12, color: P.gray400, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Privacy Policy</button>
+          <button onClick={() => navigate("/terms")} style={{ fontSize: 12, color: P.gray400, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Terms of Service</button>
+        </div>
       </div>
     </div>
   );
