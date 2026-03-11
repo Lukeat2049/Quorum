@@ -112,7 +112,7 @@ function DonutChart({ slices, size = 220, label = "", light = false }) {
         {paths.map((a, i) => (
           <path key={i} d={a.d} fill={a.color}
             opacity={hovered && hovered !== a ? 0.55 : 1}
-            stroke={light ? "rgba(255,255,255,0.35)" : "white"}
+            stroke={light ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.15)"}
             strokeWidth={hovered === a ? 3 : 2}
             strokeLinejoin="round"
             style={{ cursor: "pointer", transition: "opacity 0.15s, stroke-width 0.15s", filter: hovered === a ? "brightness(1.08)" : "none" }}
@@ -173,12 +173,13 @@ function MeetingTimer({ duration, elapsed, setElapsed, running, setRunning }) {
 }
 
 // ── Present Mode (with Next Person) ──────────────────────────────────────────
-function PresentMode({ members, initialMemberIndex, weekDataMap, onExit, duration, timerElapsed, timerRunning, setTimerRunning }) {
+function PresentMode({ members, initialMemberIndex, weekDataMap, prevWeekDataMap, onExit, duration, timerElapsed, timerRunning, setTimerRunning }) {
   const [memberIdx, setMemberIdx] = useState(initialMemberIndex || 0);
   const [slide, setSlide] = useState(0);
 
   const member = members[memberIdx];
   const weekData = weekDataMap[member?.id] || { metrics: [], time: [], notes: "" };
+  const prevWeekData = prevWeekDataMap?.[member?.id] || null;
 
   const metrics = weekData.metrics || [];
   const time = weekData.time || [];
@@ -295,19 +296,33 @@ function PresentMode({ members, initialMemberIndex, weekDataMap, onExit, duratio
           </div>
         )}
         {current?.key === "time" && (
-          <div style={{ width: "100%", maxWidth: 640, display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <p style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.5)", letterSpacing: 2, marginBottom: 12, textAlign: "center" }}>TIME BREAKDOWN</p>
-            <h2 style={{ fontSize: 36, fontWeight: 900, color: "white", margin: "0 0 32px", textAlign: "center", letterSpacing: -1 }}>How I spent my time</h2>
-            <div style={{ display: "flex", alignItems: "center", gap: 40, flexWrap: "wrap", justifyContent: "center" }}>
-              <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: "rgba(255,255,255,0.1)" }] : [])]} size={300} label={`${totalPct.toFixed(0)}%\nallocated`} light />
-              <div style={{ display: "flex", flexDirection: "column", gap: 12, minWidth: 180 }}>
-                {timeSlices.map((t, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ width: 12, height: 12, borderRadius: "50%", background: t.color, flexShrink: 0 }} />
-                    <span style={{ fontSize: 14, color: "rgba(255,255,255,0.85)", fontWeight: 600, flex: 1 }}>{t.label}</span>
-                    <span style={{ fontSize: 16, fontWeight: 900, color: "white", minWidth: 40, textAlign: "right" }}>{t.pct}%</span>
-                  </div>
-                ))}
+          <div style={{ width: "100%", maxWidth: 860, display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <p style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.5)", letterSpacing: 3, marginBottom: 16, textAlign: "center" }}>TIME BREAKDOWN</p>
+            <h2 style={{ fontSize: 48, fontWeight: 900, color: "white", margin: "0 0 40px", textAlign: "center", letterSpacing: -1.5 }}>How I spent my time</h2>
+            <div style={{ display: "flex", alignItems: "center", gap: 60, flexWrap: "wrap", justifyContent: "center" }}>
+              <DonutChart slices={[...timeSlices, ...(100 - totalPct > 0 ? [{ label: "Unallocated", value: 100 - totalPct, color: "rgba(255,255,255,0.12)" }] : [])]} size={360} label="" light />
+              <div style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 220 }}>
+                {timeSlices.map((t, i) => {
+                  const prevTime = prevWeekData?.time?.find(p => p.label === t.label);
+                  const prevPct = prevTime ? parseFloat(prevTime.value) : null;
+                  const diff = prevPct !== null ? parseFloat(t.pct) - prevPct : null;
+                  return (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <div style={{ width: 14, height: 14, borderRadius: 3, background: t.color, flexShrink: 0, border: "2px solid rgba(255,255,255,0.3)" }} />
+                      <span style={{ fontSize: 16, color: "rgba(255,255,255,0.9)", fontWeight: 700, flex: 1 }}>{t.label}</span>
+                      <span style={{ fontSize: 22, fontWeight: 900, color: "white", minWidth: 48, textAlign: "right" }}>{t.pct}%</span>
+                      {diff !== null && diff !== 0 && (
+                        <span style={{ fontSize: 12, fontWeight: 800, color: diff > 0 ? "#4ade80" : "#f87171", background: diff > 0 ? "rgba(74,222,128,0.15)" : "rgba(248,113,113,0.15)", padding: "3px 8px", borderRadius: 20, minWidth: 46, textAlign: "center" }}>
+                          {diff > 0 ? "+" : ""}{diff.toFixed(0)}%
+                        </span>
+                      )}
+                      {diff === null && prevWeekData && (
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.3)", minWidth: 46, textAlign: "center" }}>new</span>
+                      )}
+                    </div>
+                  );
+                })}
+                {prevWeekData && <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontWeight: 600, margin: "4px 0 0", textAlign: "right" }}>vs. last week</p>}
               </div>
             </div>
           </div>
@@ -1085,6 +1100,7 @@ export default function TeamApp() {
   const [presenting, setPresenting] = useState(false);
   const [presentStartIdx, setPresentStartIdx] = useState(0);
   const [weekDataMap, setWeekDataMap] = useState({});
+  const [prevWeekDataMap, setPrevWeekDataMap] = useState({});
   const [timerElapsed, setTimerElapsed] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
   const timerIv = useRef(null);
@@ -1110,14 +1126,23 @@ export default function TeamApp() {
     const { data: notesData } = await supabase.from("team_notes").select("notes").eq("team_id", teamId).eq("week_key", getWeekKey()).single();
     if (notesData) setTeamNotes(notesData.notes || "");
 
-    // Load all week data for present mode
+    // Load current + previous week data for present mode
     const weekKey = getWeekKey();
+    // Compute previous week key
+    const [yr, wk] = weekKey.split("-W").map(Number);
+    const prevWk = wk === 1 ? 52 : wk - 1;
+    const prevYr = wk === 1 ? yr - 1 : yr;
+    const prevWeekKey = `${prevYr}-W${String(prevWk).padStart(2, "0")}`;
     const map = {};
+    const prevMap = {};
     for (const m of (membersData || [])) {
       const { data } = await supabase.from("member_week_data").select("*").eq("member_id", m.id).eq("week_key", weekKey).single();
       if (data) map[m.id] = data;
+      const { data: prev } = await supabase.from("member_week_data").select("*").eq("member_id", m.id).eq("week_key", prevWeekKey).single();
+      if (prev) prevMap[m.id] = prev;
     }
     setWeekDataMap(map);
+    setPrevWeekDataMap(prevMap);
     setLoading(false);
   }
 
@@ -1179,7 +1204,7 @@ export default function TeamApp() {
     </div>
   );
 
-  if (presenting) return <PresentMode members={members} initialMemberIndex={presentStartIdx} weekDataMap={weekDataMap} onExit={() => setPresenting(false)} duration={duration} timerElapsed={timerElapsed} timerRunning={timerRunning} setTimerRunning={setTimerRunning} />;
+  if (presenting) return <PresentMode members={members} initialMemberIndex={presentStartIdx} weekDataMap={weekDataMap} prevWeekDataMap={prevWeekDataMap} onExit={() => setPresenting(false)} duration={duration} timerElapsed={timerElapsed} timerRunning={timerRunning} setTimerRunning={setTimerRunning} />;
 
   if (historyMember) return <HistoryView member={historyMember} onBack={() => setHistoryMember(null)} />;
 
