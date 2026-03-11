@@ -1087,8 +1087,7 @@ export default function TeamApp() {
   const [selectedMember, setSelectedMember] = useState(null);
   const [showSummary, setShowSummary] = useState(false);
   const [showAnalyst, setShowAnalyst] = useState(false);
-  const [addingMember, setAddingMember] = useState(false);
-  const [newMemberName, setNewMemberName] = useState("");
+
   const [showSettings, setShowSettings] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -1168,19 +1167,6 @@ export default function TeamApp() {
     setMembers(members.map(m => m.id === member.id ? { ...m, role: newRole } : m));
   }
 
-  async function addMemberDirectly(name) {
-    if (!name.trim()) return;
-    // Create a placeholder member with a generated user_id so they can claim it later via invite code
-    const placeholderId = "placeholder_" + Math.random().toString(36).slice(2, 10);
-    const { data, error } = await supabase.from("team_members").insert({
-      team_id: teamId,
-      user_id: placeholderId,
-      user_name: name.trim(),
-      role: "member"
-    }).select().single();
-    if (data) setMembers([...members, data]);
-    return !error;
-  }
 
   function copyCode() {
     navigator.clipboard.writeText(team.invite_code);
@@ -1343,25 +1329,7 @@ export default function TeamApp() {
                   </div>
                 ))}
               </div>
-              {isAdmin && (
-                <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${P.gray100}` }}>
-                  {addingMember ? (
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <input autoFocus value={newMemberName} onChange={e => setNewMemberName(e.target.value)}
-                        onKeyDown={async e => { if (e.key === "Enter") { await addMemberDirectly(newMemberName); setNewMemberName(""); setAddingMember(false); } if (e.key === "Escape") { setAddingMember(false); setNewMemberName(""); } }}
-                        placeholder="Member name..." style={{ flex: 1, padding: "9px 14px", border: `1.5px solid ${P.gray200}`, borderRadius: 10, fontSize: 13, outline: "none", fontFamily: "inherit", color: P.gray700, background: P.white }} />
-                      <button onClick={async () => { await addMemberDirectly(newMemberName); setNewMemberName(""); setAddingMember(false); }}
-                        style={{ padding: "9px 16px", borderRadius: 10, border: "none", background: P.red, color: "white", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Add</button>
-                      <button onClick={() => { setAddingMember(false); setNewMemberName(""); }}
-                        style={{ padding: "9px 12px", borderRadius: 10, border: `1.5px solid ${P.gray200}`, background: P.white, color: P.gray400, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
-                    </div>
-                  ) : (
-                    <button onClick={() => setAddingMember(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 10, border: `1.5px dashed ${P.gray200}`, background: "none", color: P.gray400, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit", width: "100%", justifyContent: "center" }}>
-                      <Plus size={14} />Add Member
-                    </button>
-                  )}
-                </div>
-              )}
+
             </div>
           )}
         </div>
@@ -1383,15 +1351,28 @@ export default function TeamApp() {
             </button>
             {showSettings && (
               <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${P.gray100}`, display: "flex", flexDirection: "column", gap: 18 }}>
-                <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: P.gray400, letterSpacing: 1, marginBottom: 8 }}>INVITE CODE</label>
-                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                    <div style={{ flex: 1, background: P.gray50, border: `1.5px solid ${P.gray200}`, borderRadius: 12, padding: "12px 16px", fontSize: 18, fontWeight: 900, letterSpacing: 4, color: P.gray700 }}>{team?.invite_code}</div>
-                    <button onClick={copyCode} style={{ display: "flex", alignItems: "center", gap: 6, padding: "12px 16px", borderRadius: 12, border: "none", background: copied ? "#e8f5e9" : P.redLight, color: copied ? "#2e7d32" : P.red, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
-                      {copied ? <><Check size={14} />Copied</> : <><Copy size={14} />Copy</>}
+                <div style={{ background: "linear-gradient(135deg, #fff5f6, #fff0f1)", border: `1.5px solid ${P.redMid}`, borderRadius: 16, padding: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                    <Users size={15} color={P.red} />
+                    <span style={{ fontWeight: 800, fontSize: 14, color: P.red }}>Invite Teammates</span>
+                  </div>
+                  <div style={{ background: P.white, borderRadius: 12, padding: "14px 18px", marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div>
+                      <p style={{ fontSize: 11, fontWeight: 700, color: P.gray400, margin: "0 0 4px", letterSpacing: 1 }}>INVITE CODE</p>
+                      <p style={{ fontSize: 24, fontWeight: 900, letterSpacing: 6, color: P.gray700, margin: 0 }}>{team?.invite_code}</p>
+                    </div>
+                    <button onClick={copyCode} style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", borderRadius: 10, border: "none", background: copied ? "#e8f5e9" : P.redLight, color: copied ? "#2e7d32" : P.red, fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+                      {copied ? <><Check size={14} />Copied!</> : <><Copy size={14} />Copy Code</>}
                     </button>
                   </div>
-                  <p style={{ fontSize: 12, color: P.gray400, marginTop: 8 }}>Share this code so teammates can join at quorum-lac.vercel.app</p>
+                  <button onClick={() => {
+                    const msg = `Join my team on Quorum! 🎯\n\nGo to: quorum-lac.vercel.app\nSign up and enter invite code: ${team?.invite_code}`;
+                    navigator.clipboard.writeText(msg);
+                    setCopied(true); setTimeout(() => setCopied(false), 2000);
+                  }} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px 0", borderRadius: 12, border: `1.5px solid ${P.redMid}`, background: "none", color: P.red, fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+                    <MessageSquare size={14} />Copy Invite Message
+                  </button>
+                  <p style={{ fontSize: 11, color: P.gray400, marginTop: 10, textAlign: "center" }}>Teammates go to <strong>quorum-lac.vercel.app</strong>, sign up, and enter this code</p>
                 </div>
                 <div>
                   <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: P.gray400, letterSpacing: 1, marginBottom: 8 }}>MEETING DURATION (MIN)</label>
