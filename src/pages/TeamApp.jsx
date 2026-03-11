@@ -1251,7 +1251,7 @@ export default function TeamApp() {
         <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
           <button onClick={() => { if (!order.length) setOrder([...members]); setShowOrderManager(true); }} disabled={!members.length}
             style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "16px 20px", borderRadius: 16, border: "none", cursor: "pointer", fontWeight: 900, fontSize: 15, background: P.red, color: "white", boxShadow: "0 4px 16px rgba(230,0,35,.2)", fontFamily: "inherit" }}>
-            <GripVertical size={18} />Set Order
+            <GripHorizontal size={18} />Set Order
           </button>
           <button onClick={() => handlePresentAll(0)}
             style={{ display: "flex", alignItems: "center", gap: 8, padding: "16px 20px", borderRadius: 16, border: `2px solid ${P.gray200}`, background: P.white, color: P.gray700, fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
@@ -1309,7 +1309,7 @@ export default function TeamApp() {
                       newOrder.splice(to, 0, moved);
                       setOrder(newOrder);
                     }}>
-                    <GripVertical size={16} color={P.gray400} style={{ cursor: "grab", flexShrink: 0 }} />
+                    <GripHorizontal size={16} color={P.gray400} style={{ cursor: "grab", flexShrink: 0 }} />
                     <span style={{ fontSize: 16, fontWeight: 900, color: P.red, width: 22 }}>{i + 1}</span>
                     <Avatar name={m.user_name} size={32} />
                     <span style={{ fontWeight: 700, fontSize: 14, color: P.gray700, flex: 1 }}>{m.user_name}</span>

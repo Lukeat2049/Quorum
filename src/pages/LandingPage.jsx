@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
-import { ArrowRight, BarChart2, FileText, Clock, Maximize2, History, MessageSquare, TrendingUp, Check, GripVertical } from "lucide-react";
+import { ArrowRight, BarChart2, FileText, Clock, Maximize2, History, MessageSquare, TrendingUp, Check, GripHorizontal } from "lucide-react";
 
 const P = {
   red: "#e60023", redLight: "#ffeef0", redMid: "#ffccd2",
@@ -35,7 +35,7 @@ const features = [
   { icon: Maximize2, tag: "MEETING", title: "Present Mode", desc: "Full-screen slide-by-slide presentation for remote standups. Keyboard navigation, member pills, live timer." },
   { icon: History, tag: "MEETING", title: "2-Year History", desc: "Every week stored for 2 years. Drill into any member's past week or view the whole team at a glance." },
   { icon: MessageSquare, tag: "MEETING", title: "Team Notes & Timer", desc: "Shared notes for blockers and decisions. Built-in countdown timer that persists through the whole meeting." },
-  { icon: GripVertical, tag: "MEETING", title: "Custom Speaking Order", desc: "Drag to reorder, randomize, or manually set who goes when. Full control over how your standup flows." },
+  { icon: GripHorizontal, tag: "MEETING", title: "Custom Speaking Order", desc: "Drag to reorder, randomize, or manually set who goes when. Full control over how your standup flows." },
 ];
 
 
